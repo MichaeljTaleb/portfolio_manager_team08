@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AllocationCard } from '../components/dashboard/AllocationCard';
 import { MetricCard } from '../components/dashboard/MetricCard';
 import { PerformanceChart } from '../components/dashboard/PerformanceChart';
 import { HoldingsTable } from '../components/holdings/HoldingsTable';
 import { holdings, portfolioSummary } from '../data/mockPortfolio';
 import type { TimeRange } from '../types/portfolio';
-import { formatSignedCurrency, formatSignedPercent } from '../utils/formatters';
+import { formatAsOf, formatSignedCurrency, formatSignedPercent, getGreeting } from '../utils/formatters';
 
 interface DashboardPageProps {
   onViewHoldings: () => void;
@@ -13,12 +13,18 @@ interface DashboardPageProps {
 
 export function DashboardPage({ onViewHoldings }: DashboardPageProps) {
   const [range, setRange] = useState<TimeRange>('1M');
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
 
   return (
     <>
       <div className="page-heading">
-        <div><h1>Good afternoon, Sang</h1><p>Here&apos;s how your portfolio is doing today.</p></div>
-        <span>As of {portfolioSummary.asOf}</span>
+        <div><h1>{getGreeting(now)}, Sang</h1><p>Here&apos;s how your portfolio is doing today.</p></div>
+        <span>As of {formatAsOf(now)}</span>
       </div>
 
       <div className="dashboard-grid">
@@ -36,7 +42,7 @@ export function DashboardPage({ onViewHoldings }: DashboardPageProps) {
         <h2>Portfolio holdings</h2>
         <button type="button" className="text-button" onClick={onViewHoldings}>View all holdings</button>
       </div>
-      <HoldingsTable holdings={holdings.slice(0, 5)} compact />
+      <HoldingsTable holdings={holdings.slice(0, 5)} />
     </>
   );
 }

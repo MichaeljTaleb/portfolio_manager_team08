@@ -1,6 +1,8 @@
+import { useState } from 'react';
+import type { MouseEvent } from 'react';
 import type { TimeRange } from '../../types/portfolio';
 import { buildChartPaths } from '../../utils/chart';
-import { formatSignedCurrency, formatSignedPercent } from '../../utils/formatters';
+import { formatCurrency, formatSignedCurrency, formatSignedPercent } from '../../utils/formatters';
 import { performanceData } from '../../data/mockPortfolio';
 import { Card } from '../common/Card';
 
@@ -9,9 +11,10 @@ interface PerformanceChartProps {
   onRangeChange: (range: TimeRange) => void;
 }
 
-const ranges: TimeRange[] = ['1D', '1W', '1M', '1Y', 'All'];
+const ranges: TimeRange[] = ['1W', '2W', '3W', '1M'];
 
 export function PerformanceChart({ range, onRangeChange }: PerformanceChartProps) {
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const series = performanceData[range];
   const paths = buildChartPaths(series.values);
   const first = series.values[0];
@@ -20,13 +23,24 @@ export function PerformanceChart({ range, onRangeChange }: PerformanceChartProps
   const percent = ((last - first) / first) * 100;
   const tone = change >= 0 ? 'positive' : 'negative';
 
+  const hovered = hoverIndex === null ? null : paths.points[hoverIndex];
+  const hoveredLabel = hoverIndex === null ? null : series.dates[hoverIndex];
+
+  const handleMove = (event: MouseEvent<HTMLDivElement>) => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    if (bounds.width === 0) return;
+    const ratio = (event.clientX - bounds.left) / bounds.width;
+    const index = Math.round(Math.min(1, Math.max(0, ratio)) * (paths.points.length - 1));
+    setHoverIndex(index);
+  };
+
   return (
     <Card className="performance-card">
       <div className="accent-glow" aria-hidden="true" />
-      <div className="performance-header">
+      <div className="performance-header fade-slide-in">
         <div>
           <span className="eyebrow">Total portfolio value</span>
-          <h1 className="portfolio-value">$284,750</h1>
+          <h1 className="portfolio-value">{formatCurrency(hovered ? hovered.value * 1000 : 284750)}</h1>
           <div className="range-summary">
             <span className={`change-pill ${tone}`}>
               {change >= 0 ? '▲' : '▼'} {formatSignedCurrency(change)} ({formatSignedPercent(percent)})
@@ -49,7 +63,12 @@ export function PerformanceChart({ range, onRangeChange }: PerformanceChartProps
         </div>
       </div>
       <div className="chart-wrap">
-        <svg viewBox="0 0 720 210" preserveAspectRatio="none" role="img" aria-label={`Portfolio performance for the ${series.label}`}>
+        <div
+          className="chart-plot"
+          onMouseMove={handleMove}
+          onMouseLeave={() => setHoverIndex(null)}
+        >
+        <svg key={range} className="chart-svg-animate" viewBox="0 0 720 210" preserveAspectRatio="none" role="img" aria-label={`Portfolio performance for the ${series.label}`}>
           <defs>
             <linearGradient id="portfolioArea" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.28" />
@@ -58,7 +77,38 @@ export function PerformanceChart({ range, onRangeChange }: PerformanceChartProps
           </defs>
           <path d={paths.area} fill="url(#portfolioArea)" />
           <path d={paths.line} fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+          {hovered && (
+            <line
+              x1={hovered.x}
+              x2={hovered.x}
+              y1="0"
+              y2={paths.height}
+              stroke="var(--border)"
+              strokeWidth="1"
+              vectorEffect="non-scaling-stroke"
+            />
+          )}
         </svg>
+        {hovered && (
+          <>
+            <span
+              className="chart-dot"
+              style={{ left: `${(hovered.x / paths.width) * 100}%`, top: `${(hovered.y / paths.height) * 100}%` }}
+            />
+            <div
+              className="chart-tooltip"
+              data-flip={hovered.y / paths.height < 0.3}
+              style={{
+                left: `${Math.min(92, Math.max(8, (hovered.x / paths.width) * 100))}%`,
+                top: `${(hovered.y / paths.height) * 100}%`,
+              }}
+            >
+              <strong>{formatCurrency(hovered.value * 1000)}</strong>
+              {hoveredLabel && <span>{hoveredLabel}</span>}
+            </div>
+          </>
+        )}
+        </div>
         <div className="chart-axis" aria-hidden="true">
           {series.axis.map((label) => <span key={label}>{label}</span>)}
         </div>

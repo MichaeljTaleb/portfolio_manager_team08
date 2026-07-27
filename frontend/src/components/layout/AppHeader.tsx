@@ -10,12 +10,6 @@ export function AppHeader({ activeView, onChangeView }: AppHeaderProps) {
     <>
       <header className="app-header">
         <button className="brand" type="button" onClick={() => onChangeView('dashboard')} aria-label="Go to dashboard">
-          <span className="brand-mark" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="3 17 9 11 13 15 21 6" />
-              <polyline points="21 12 21 6 15 6" />
-            </svg>
-          </span>
           <span>Vantage</span>
         </button>
 

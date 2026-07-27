@@ -1,13 +1,20 @@
 export type AssetType = 'Stocks' | 'Bonds' | 'Cash';
-export type TimeRange = '1D' | '1W' | '1M' | '1Y' | 'All';
+export type TimeRange = '1W' | '2W' | '3W' | '1M';
 
 export interface Holding {
+  id: string;
   ticker: string;
   name: string;
   value: number;
   allocation: number;
   dailyChange: number;
   type: AssetType;
+  quantity: number;
+  currentPrice: number;
+  totalGainLoss: number;
+  purchaseDate?: string;
+  couponRate?: number;
+  maturityDate?: string;
 }
 
 export interface AllocationItem {
@@ -18,6 +25,7 @@ export interface AllocationItem {
 
 export interface PerformanceSeries {
   values: number[];
+  dates: string[];
   axis: string[];
   label: string;
 }
