@@ -12,7 +12,7 @@ mycursor = mydb.cursor()
 
 
 def get_cursor():
-    return mydb.cursor()
+    return mydb.cursor(dictionary=True)
 
 
 mycursor.execute("SHOW TABLES")
