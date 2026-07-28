@@ -1,13 +1,17 @@
 import type { Holding } from '../../types/portfolio';
 import { formatCurrency, formatPrice, formatQuantity, formatSignedCurrency, formatSignedPercent } from '../../utils/formatters';
 import { Card } from '../common/Card';
+import { RowActionsMenu } from './RowActionsMenu';
 
 interface HoldingsTableProps {
   holdings: Holding[];
+  onRequestSell?: (holding: Holding) => void;
   onRequestRemove?: (holding: Holding) => void;
 }
 
-export function HoldingsTable({ holdings, onRequestRemove }: HoldingsTableProps) {
+export function HoldingsTable({ holdings, onRequestSell, onRequestRemove }: HoldingsTableProps) {
+  const showActions = Boolean(onRequestSell || onRequestRemove);
+
   return (
     <Card className="table-card">
       <div className="table-scroll">
@@ -22,7 +26,7 @@ export function HoldingsTable({ holdings, onRequestRemove }: HoldingsTableProps)
               <th className="numeric">Total gain/loss</th>
               <th className="numeric">Allocation</th>
               <th className="numeric">Value</th>
-              {onRequestRemove && <th className="row-action-col" aria-hidden="true" />}
+              {showActions && <th className="row-action-col" aria-hidden="true" />}
             </tr>
           </thead>
           <tbody>
@@ -45,22 +49,14 @@ export function HoldingsTable({ holdings, onRequestRemove }: HoldingsTableProps)
                   </td>
                   <td className="numeric">{holding.allocation.toFixed(1)}%</td>
                   <td className="numeric holding-value">{formatCurrency(holding.value)}</td>
-                  {onRequestRemove && (
+                  {showActions && (
                     <td className="row-action-col">
-                      <button
-                        type="button"
-                        className="row-remove-button"
-                        aria-label={`Remove ${holding.ticker}`}
-                        onClick={() => onRequestRemove(holding)}
-                      >
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <polyline points="3 6 5 6 21 6" />
-                          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                          <path d="M10 11v6" />
-                          <path d="M14 11v6" />
-                          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-                        </svg>
-                      </button>
+                      <RowActionsMenu
+                        label={holding.ticker}
+                        sellLabel={isCash ? 'Withdraw' : 'Sell'}
+                        onSell={() => onRequestSell?.(holding)}
+                        onRemove={() => onRequestRemove?.(holding)}
+                      />
                     </td>
                   )}
                 </tr>
