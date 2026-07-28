@@ -3,8 +3,8 @@ import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { Toast } from '../components/common/Toast';
 import { AddHoldingForm } from '../components/holdings/AddHoldingForm';
 import { HoldingsTable } from '../components/holdings/HoldingsTable';
-import { buyHolding, fetchHoldings, sellHolding } from '../api/client';
 import { SellHoldingForm } from '../components/holdings/SellHoldingForm';
+import { buyHolding, fetchHoldings, sellHolding } from '../api/client';
 import type { AssetType, Holding } from '../types/portfolio';
 import { formatCurrency } from '../utils/formatters';
 
