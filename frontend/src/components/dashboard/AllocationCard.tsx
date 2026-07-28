@@ -4,6 +4,7 @@ import { Card } from '../common/Card';
 
 export function AllocationCard() {
   const [drawn, setDrawn] = useState(false);
+  const [hovered, setHovered] = useState<string | null>(null);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => setDrawn(true));
@@ -19,6 +20,8 @@ export function AllocationCard() {
     return { ...item, length, offset };
   });
 
+  const hoveredSegment = segments.find((segment) => segment.name === hovered) ?? null;
+
   return (
     <Card className="allocation-card">
       <span className="eyebrow">Asset allocation</span>
@@ -30,6 +33,7 @@ export function AllocationCard() {
               <circle
                 key={segment.name}
                 className="donut-segment"
+                data-dimmed={hovered !== null && hovered !== segment.name}
                 cx="66"
                 cy="66"
                 r="54"
@@ -39,14 +43,34 @@ export function AllocationCard() {
                 strokeDasharray={`${segment.length} ${circumference - segment.length}`}
                 strokeDashoffset={drawn ? segment.offset : segment.offset + segment.length}
                 style={{ transitionDelay: `${index * 120}ms` }}
+                onMouseEnter={() => setHovered(segment.name)}
+                onMouseLeave={() => setHovered(null)}
               />
             ))}
           </svg>
-          <div className="donut-label"><span>Holdings</span><strong>{holdings.length}</strong></div>
+          <div className="donut-label">
+            {hoveredSegment ? (
+              <>
+                <span>{hoveredSegment.name}</span>
+                <strong>{hoveredSegment.percentage.toFixed(1)}%</strong>
+              </>
+            ) : (
+              <>
+                <span>Holdings</span>
+                <strong>{holdings.length}</strong>
+              </>
+            )}
+          </div>
         </div>
         <div className="allocation-legend">
           {allocations.map((item) => (
-            <div className="legend-item" key={item.name}>
+            <div
+              className="legend-item"
+              key={item.name}
+              data-active={hovered === item.name}
+              onMouseEnter={() => setHovered(item.name)}
+              onMouseLeave={() => setHovered(null)}
+            >
               <span className="legend-dot" style={{ background: item.color }} />
               <span>{item.name}</span>
               <strong>{item.percentage.toFixed(1)}%</strong>

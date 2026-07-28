@@ -64,6 +64,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .performance-card { height: 100%; }
 .metric-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .metric-card { padding: 16px 18px; }
+.metric-grid .metric-card:nth-child(2) .metric-card-content { animation-delay: 90ms; }
 .metric-value { display: block; margin-top: 7px; font-size: 24px; font-weight: 600; letter-spacing: -0.025em; }
 .metric-detail { display: block; margin-top: 5px; font-size: 13px; }
 
@@ -104,16 +105,18 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .allocation-content { flex: 1; display: flex; align-items: center; justify-content: center; gap: 32px; margin-top: 14px; }
 .donut-wrap { position: relative; width: 220px; height: 220px; flex: none; }
 .donut-wrap svg { width: 220px; height: 220px; transform: rotate(-90deg); }
-.donut-segment { transition: stroke-dashoffset 900ms cubic-bezier(0.16, 1, 0.3, 1); }
+.donut-segment { transition: stroke-dashoffset 900ms cubic-bezier(0.16, 1, 0.3, 1), opacity 0.15s ease; cursor: pointer; }
+.donut-segment[data-dimmed='true'] { opacity: 0.35; }
 @media (prefers-reduced-motion: reduce) {
   .chart-svg-animate, .fade-slide-in { animation: none; }
-  .donut-segment { transition: none; }
+  .donut-segment { transition: opacity 0.15s ease; }
 }
-.donut-label { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.donut-label { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
 .donut-label span { color: var(--muted); font-size: 14px; }
 .donut-label strong { margin-top: 4px; font-size: 30px; }
 .allocation-legend { flex: none; display: flex; flex-direction: column; gap: 16px; }
-.legend-item { display: grid; grid-template-columns: 11px 1fr auto; align-items: center; gap: 11px; font-size: 16px; }
+.legend-item { display: grid; grid-template-columns: 11px 1fr auto; align-items: center; gap: 11px; font-size: 16px; cursor: pointer; border-radius: var(--radius-sm); padding: 2px 6px; margin: -2px -6px; transition: background 0.15s ease; }
+.legend-item[data-active='true'] { background: rgba(243, 246, 251, 0.06); }
 .legend-dot { width: 11px; height: 11px; border-radius: 2px; }
 
 .table-card { overflow: hidden; }

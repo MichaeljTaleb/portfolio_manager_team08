@@ -10,9 +10,11 @@ interface MetricCardProps {
 export function MetricCard({ label, value, detail, tone = 'neutral' }: MetricCardProps) {
   return (
     <Card className="metric-card">
-      <span className="eyebrow">{label}</span>
-      <strong className={`metric-value ${tone}`}>{value}</strong>
-      {detail && <span className={`metric-detail ${tone}`}>{detail}</span>}
+      <div className="metric-card-content fade-slide-in">
+        <span className="eyebrow">{label}</span>
+        <strong className={`metric-value ${tone}`}>{value}</strong>
+        {detail && <span className={`metric-detail ${tone}`}>{detail}</span>}
+      </div>
     </Card>
   );
 }
