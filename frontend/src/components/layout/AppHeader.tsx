@@ -10,7 +10,7 @@ export function AppHeader({ activeView, onChangeView }: AppHeaderProps) {
     <>
       <header className="app-header">
         <button className="brand" type="button" onClick={() => onChangeView('dashboard')} aria-label="Go to dashboard">
-          <span>Vantage</span>
+          <img src="/logo.svg" alt="Vantage" className="brand-logo" />
         </button>
 
         <nav className="primary-nav" aria-label="Primary navigation">

@@ -32,21 +32,24 @@ button { font: inherit; }
 button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
 .app-shell { min-height: 100vh; }
-.app-header { max-width: 1760px; margin: 0 auto; padding: 20px 40px 0; display: flex; align-items: center; gap: 32px; }
-.brand { margin-right: auto; display: flex; align-items: center; gap: 10px; border: 0; background: none; color: var(--text); cursor: pointer; font-weight: 700; font-size: 26px; letter-spacing: -0.02em; }
-.primary-nav { display: flex; gap: 26px; }
-.nav-link { position: relative; padding: 6px 2px 15px; border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 14px; }
+.app-header { max-width: 1760px; margin: 0 auto; padding: 16px 40px 0; display: flex; align-items: center; gap: 32px; }
+.brand { margin-right: auto; display: flex; align-items: center; gap: 10px; border: 0; background: none; padding: 0; cursor: pointer; }
+.brand-logo { height: 40px; width: auto; display: block; }
+.primary-nav { display: flex; align-items: center; gap: 26px; }
+.nav-link { position: relative; padding: 8px 2px; border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 14px; }
 .nav-link:hover { color: var(--text); }
 .nav-link[aria-current='page'] { color: var(--text); }
-.nav-link[aria-current='page']::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--accent); }
+.nav-link[aria-current='page']::after { content: ''; position: absolute; left: 0; right: 0; bottom: -9px; height: 2px; background: var(--accent); }
 .avatar { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); border: 1px solid var(--border); color: var(--muted); font-size: 13px; }
-.header-rule { height: 1px; max-width: 1760px; margin: 16px auto 0; background: linear-gradient(to right, transparent, var(--border) 48px, var(--border) calc(100% - 48px), transparent); }
-.page-container { max-width: 1760px; margin: 0 auto; padding: 28px 40px 64px; }
+.header-rule { height: 1px; max-width: 1760px; margin: 14px auto 0; background: linear-gradient(to right, transparent, var(--border) 48px, var(--border) calc(100% - 48px), transparent); }
+.page-container { max-width: 1760px; margin: 0 auto; padding: 24px 40px 64px; }
 
 .page-heading, .section-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 20px; }
 .page-heading { margin-bottom: 20px; }
 .page-heading h1 { margin: 0 0 4px; font-size: 26px; letter-spacing: -0.025em; font-weight: 600; }
 .page-heading p, .page-heading > span { margin: 0; color: var(--muted); font-size: 13px; }
+.page-subline { display: flex; align-items: baseline; flex-wrap: wrap; gap: 10px; }
+.page-subline p, .page-subline span { margin: 0; color: var(--muted); font-size: 13px; }
 .section-heading { margin: 32px 0 12px; }
 .section-heading h2 { margin: 0; font-size: 18px; font-weight: 600; }
 
@@ -248,7 +251,6 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 @media (max-width: 640px) {
   .app-header, .page-container { padding-left: 18px; padding-right: 18px; }
   .page-heading { align-items: flex-start; flex-direction: column; }
-  .page-heading > span { display: none; }
   .performance-header { flex-direction: column; }
   .range-control { width: 100%; }
   .range-button { flex: 1; padding-inline: 6px; }
