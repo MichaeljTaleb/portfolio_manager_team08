@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { Toast } from '../components/common/Toast';
 import { AddHoldingForm } from '../components/holdings/AddHoldingForm';
 import { HoldingsTable } from '../components/holdings/HoldingsTable';
-import { holdings as initialHoldings } from '../data/mockPortfolio';
+import { buyHolding, fetchHoldings, sellHolding } from '../api/client';
 import type { AssetType, Holding } from '../types/portfolio';
 
 type AssetFilter = 'All' | AssetType;
@@ -17,8 +17,16 @@ const sortOptions: { value: SortOption; label: string }[] = [
   { value: 'gain-desc', label: 'Total gain/loss (high to low)' },
 ];
 
+const recalculateAllocations = (items: Holding[]): Holding[] => {
+  const total = items.reduce((sum, item) => sum + item.value, 0);
+  return items.map((item) => ({
+    ...item,
+    allocation: total === 0 ? 0 : Number(((item.value / total) * 100).toFixed(1)),
+  }));
+};
+
 export function HoldingsPage() {
-  const [holdings, setHoldings] = useState<Holding[]>(initialHoldings);
+  const [holdings, setHoldings] = useState<Holding[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [query, setQuery] = useState('');
   const [assetFilter, setAssetFilter] = useState<AssetFilter>('All');
@@ -27,31 +35,44 @@ export function HoldingsPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [lastRemoved, setLastRemoved] = useState<{ holding: Holding; index: number } | null>(null);
 
-  const marketValue = holdings.reduce((sum, holding) => sum + holding.value, 0);
-
-  const recalculateAllocations = (items: Holding[]): Holding[] => {
-    const total = items.reduce((sum, item) => sum + item.value, 0);
-    return items.map((item) => ({
-      ...item,
-      allocation: total === 0 ? 0 : Number(((item.value / total) * 100).toFixed(1)),
-    }));
+  const loadHoldings = async () => {
+    const backendHoldings = await fetchHoldings();
+    setHoldings((current) => {
+      const localOnly = current.filter((holding) => holding.type !== 'Stocks');
+      return recalculateAllocations([...backendHoldings, ...localOnly]);
+    });
   };
 
-  const handleAddHolding = (holding: Omit<Holding, 'id' | 'allocation'>) => {
-    const newHolding: Holding = {
-      ...holding,
-      id: `${holding.ticker}-${holdings.length}-${Math.random().toString(36).slice(2, 8)}`,
-      allocation: 0,
-    };
-    setHoldings((current) => recalculateAllocations([...current, newHolding]));
+  useEffect(() => {
+    loadHoldings();
+  }, []);
+
+  const handleAddHolding = async (holding: Omit<Holding, 'id' | 'allocation'>) => {
+    if (holding.type === 'Stocks') {
+      await buyHolding(holding.ticker, holding.quantity, holding.currentPrice);
+      await loadHoldings();
+    } else {
+      const newHolding: Holding = {
+        ...holding,
+        id: `${holding.ticker}-${holdings.length}-${Math.random().toString(36).slice(2, 8)}`,
+        allocation: 0,
+      };
+      setHoldings((current) => recalculateAllocations([...current, newHolding]));
+    }
     setIsAdding(false);
   };
 
-  const handleConfirmRemove = () => {
+  const handleConfirmRemove = async () => {
     if (!pendingRemoval) return;
-    const index = holdings.findIndex((holding) => holding.id === pendingRemoval.id);
-    setHoldings((current) => recalculateAllocations(current.filter((holding) => holding.id !== pendingRemoval.id)));
-    setLastRemoved({ holding: pendingRemoval, index });
+
+    if (pendingRemoval.type === 'Stocks') {
+      await sellHolding(pendingRemoval.ticker, pendingRemoval.quantity, pendingRemoval.currentPrice);
+      await loadHoldings();
+    } else {
+      const index = holdings.findIndex((holding) => holding.id === pendingRemoval.id);
+      setHoldings((current) => recalculateAllocations(current.filter((holding) => holding.id !== pendingRemoval.id)));
+      setLastRemoved({ holding: pendingRemoval, index });
+    }
     setToastMessage(`${pendingRemoval.ticker} removed from holdings.`);
     setPendingRemoval(null);
   };

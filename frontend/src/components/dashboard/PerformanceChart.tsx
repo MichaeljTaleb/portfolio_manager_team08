@@ -1,26 +1,34 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { MouseEvent } from 'react';
-import type { TimeRange } from '../../types/portfolio';
+import type { PerformanceSeries, TimeRange } from '../../types/portfolio';
 import { buildChartPaths } from '../../utils/chart';
 import { formatCurrency, formatSignedCurrency, formatSignedPercent } from '../../utils/formatters';
-import { performanceData } from '../../data/mockPortfolio';
+import { fetchPerformance } from '../../api/client';
 import { Card } from '../common/Card';
 
 interface PerformanceChartProps {
   range: TimeRange;
   onRangeChange: (range: TimeRange) => void;
+  totalValue: number;
 }
 
 const ranges: TimeRange[] = ['1W', '2W', '3W', '1M'];
+const emptySeries: PerformanceSeries = { values: [], dates: [], axis: [], label: '' };
 
-export function PerformanceChart({ range, onRangeChange }: PerformanceChartProps) {
+export function PerformanceChart({ range, onRangeChange, totalValue }: PerformanceChartProps) {
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
-  const series = performanceData[range];
-  const paths = buildChartPaths(series.values);
-  const first = series.values[0];
-  const last = series.values.at(-1) ?? first;
-  const change = (last - first) * 1000;
-  const percent = ((last - first) / first) * 100;
+  const [series, setSeries] = useState<PerformanceSeries>(emptySeries);
+
+  useEffect(() => {
+    fetchPerformance(range).then(setSeries);
+  }, [range]);
+
+  const values = series.values.length ? series.values : [totalValue];
+  const paths = buildChartPaths(values);
+  const first = values[0];
+  const last = values.at(-1) ?? first;
+  const change = last - first;
+  const percent = first ? ((last - first) / first) * 100 : 0;
   const tone = change >= 0 ? 'positive' : 'negative';
 
   const hovered = hoverIndex === null ? null : paths.points[hoverIndex];
@@ -40,7 +48,7 @@ export function PerformanceChart({ range, onRangeChange }: PerformanceChartProps
       <div className="performance-header fade-slide-in">
         <div>
           <span className="eyebrow">Total portfolio value</span>
-          <h1 className="portfolio-value">{formatCurrency(hovered ? hovered.value * 1000 : 284750)}</h1>
+          <h1 className="portfolio-value">{formatCurrency(hovered ? hovered.value : totalValue)}</h1>
           <div className="range-summary">
             <span className={`change-pill ${tone}`}>
               {change >= 0 ? '▲' : '▼'} {formatSignedCurrency(change)} ({formatSignedPercent(percent)})
@@ -103,7 +111,7 @@ export function PerformanceChart({ range, onRangeChange }: PerformanceChartProps
                 top: `${(hovered.y / paths.height) * 100}%`,
               }}
             >
-              <strong>{formatCurrency(hovered.value * 1000)}</strong>
+              <strong>{formatCurrency(hovered.value)}</strong>
               {hoveredLabel && <span>{hoveredLabel}</span>}
             </div>
           </>
