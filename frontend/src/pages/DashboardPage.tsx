@@ -23,8 +23,13 @@ export function DashboardPage({ onViewHoldings }: DashboardPageProps) {
   return (
     <>
       <div className="page-heading">
-        <div><h1>{getGreeting(now)}, Sang</h1><p>Here&apos;s how your portfolio is doing today.</p></div>
-        <span>As of {formatAsOf(now)}</span>
+        <div>
+          <h1>{getGreeting(now)}, Sang</h1>
+          <div className="page-subline">
+            <p>Here&apos;s how your portfolio is doing today.</p>
+            <span>As of {formatAsOf(now)}</span>
+          </div>
+        </div>
       </div>
 
       <div className="dashboard-grid">
