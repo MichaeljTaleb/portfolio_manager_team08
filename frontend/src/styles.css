@@ -139,7 +139,8 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .holding-value { font-weight: 600; }
 
 .row-action-col { width: 44px; padding-left: 4px !important; padding-right: 14px !important; }
-.row-remove-button {
+.row-actions-menu { position: relative; display: inline-block; }
+.row-actions-trigger {
   display: grid;
   place-items: center;
   width: 28px;
@@ -153,13 +154,44 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
   transform: translateX(-4px);
   transition: opacity 0.12s ease, transform 0.12s ease, color 0.12s ease, background 0.12s ease;
 }
-.row-remove-button svg { width: 15px; height: 15px; }
-.holding-row:hover .row-remove-button,
-.row-remove-button:focus-visible {
+.row-actions-trigger svg { width: 15px; height: 15px; }
+.holding-row:hover .row-actions-trigger,
+.row-actions-trigger:focus-visible,
+.row-actions-trigger[aria-expanded="true"] {
   opacity: 1;
   transform: translateX(0);
 }
-.row-remove-button:hover { color: var(--negative); background: var(--negative-soft); }
+.row-actions-trigger:hover,
+.row-actions-trigger[aria-expanded="true"] { color: var(--text); background: rgba(243, 246, 251, 0.08); }
+
+.row-actions-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 20;
+  min-width: 132px;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgba(6, 10, 20, 0.35);
+}
+.row-actions-item {
+  border: 0;
+  background: none;
+  color: var(--text);
+  text-align: left;
+  padding: 7px 9px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  cursor: pointer;
+}
+.row-actions-item:hover { background: rgba(243, 246, 251, 0.08); }
+.row-actions-item-danger { color: var(--negative); }
+.row-actions-item-danger:hover { background: var(--negative-soft); }
 
 .text-button { border: 0; background: none; color: var(--accent-hover); cursor: pointer; font-size: 13px; }
 .text-button:hover { color: #bfdbfe; }

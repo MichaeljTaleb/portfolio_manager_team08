@@ -3,8 +3,10 @@ import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { Toast } from '../components/common/Toast';
 import { AddHoldingForm } from '../components/holdings/AddHoldingForm';
 import { HoldingsTable } from '../components/holdings/HoldingsTable';
+import { SellHoldingForm } from '../components/holdings/SellHoldingForm';
 import { buyHolding, fetchHoldings, sellHolding } from '../api/client';
 import type { AssetType, Holding } from '../types/portfolio';
+import { formatCurrency } from '../utils/formatters';
 
 type AssetFilter = 'All' | AssetType;
 type SortOption = 'name' | 'value-desc' | 'allocation-desc' | 'today-desc' | 'gain-desc';
@@ -32,6 +34,7 @@ export function HoldingsPage() {
   const [assetFilter, setAssetFilter] = useState<AssetFilter>('All');
   const [sortBy, setSortBy] = useState<SortOption>('name');
   const [pendingRemoval, setPendingRemoval] = useState<Holding | null>(null);
+  const [pendingSale, setPendingSale] = useState<Holding | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [lastRemoved, setLastRemoved] = useState<{ holding: Holding; index: number } | null>(null);
 
@@ -75,6 +78,40 @@ export function HoldingsPage() {
     }
     setToastMessage(`${pendingRemoval.ticker} removed from holdings.`);
     setPendingRemoval(null);
+  };
+
+  const handleConfirmSale = (quantity: number) => {
+    if (!pendingSale) return;
+    const isFullSale = quantity >= pendingSale.quantity;
+    const isCash = pendingSale.type === 'Cash';
+
+    if (isFullSale) {
+      const index = holdings.findIndex((holding) => holding.id === pendingSale.id);
+      setHoldings((current) => recalculateAllocations(current.filter((holding) => holding.id !== pendingSale.id)));
+      setLastRemoved({ holding: pendingSale, index });
+    } else {
+      setHoldings((current) =>
+        recalculateAllocations(
+          current.map((holding) => {
+            if (holding.id !== pendingSale.id) return holding;
+            const remainingQuantity = holding.quantity - quantity;
+            return {
+              ...holding,
+              quantity: remainingQuantity,
+              value: remainingQuantity * holding.currentPrice,
+            };
+          }),
+        ),
+      );
+      setLastRemoved(null);
+    }
+
+    setToastMessage(
+      isCash
+        ? `${formatCurrency(quantity)} withdrawn from ${pendingSale.ticker}.`
+        : `Sold ${quantity} ${pendingSale.ticker} ${quantity === 1 ? 'share' : 'shares'}.`,
+    );
+    setPendingSale(null);
   };
 
   const handleUndoRemove = () => {
@@ -157,8 +194,15 @@ export function HoldingsPage() {
         </select>
       </div>
 
-      <HoldingsTable holdings={visibleHoldings} onRequestRemove={setPendingRemoval} />
+      <HoldingsTable holdings={visibleHoldings} onRequestSell={setPendingSale} onRequestRemove={setPendingRemoval} />
       {isAdding && <AddHoldingForm onCancel={() => setIsAdding(false)} onSubmit={handleAddHolding} />}
+      {pendingSale && (
+        <SellHoldingForm
+          holding={pendingSale}
+          onCancel={() => setPendingSale(null)}
+          onConfirm={handleConfirmSale}
+        />
+      )}
       {pendingRemoval && (
         <ConfirmDialog
           title="Remove holding"
