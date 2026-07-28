@@ -3,8 +3,8 @@ import { AllocationCard } from '../components/dashboard/AllocationCard';
 import { MetricCard } from '../components/dashboard/MetricCard';
 import { PerformanceChart } from '../components/dashboard/PerformanceChart';
 import { HoldingsTable } from '../components/holdings/HoldingsTable';
-import { holdings, portfolioSummary } from '../data/mockPortfolio';
-import type { TimeRange } from '../types/portfolio';
+import { fetchHoldings, fetchSummary, type PortfolioSummary } from '../api/client';
+import type { Holding, TimeRange } from '../types/portfolio';
 import { formatAsOf, formatSignedCurrency, formatSignedPercent, getGreeting } from '../utils/formatters';
 
 interface DashboardPageProps {
@@ -14,10 +14,17 @@ interface DashboardPageProps {
 export function DashboardPage({ onViewHoldings }: DashboardPageProps) {
   const [range, setRange] = useState<TimeRange>('1M');
   const [now, setNow] = useState(() => new Date());
+  const [holdings, setHoldings] = useState<Holding[]>([]);
+  const [summary, setSummary] = useState<PortfolioSummary | null>(null);
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    fetchHoldings().then(setHoldings);
+    fetchSummary().then(setSummary);
   }, []);
 
   return (
@@ -33,11 +40,11 @@ export function DashboardPage({ onViewHoldings }: DashboardPageProps) {
       </div>
 
       <div className="dashboard-grid">
-        <PerformanceChart range={range} onRangeChange={setRange} />
+        <PerformanceChart range={range} onRangeChange={setRange} totalValue={summary?.totalValue ?? 0} />
         <div className="dashboard-rail">
           <div className="metric-grid">
-            <MetricCard label="Today's gain" value={formatSignedCurrency(portfolioSummary.dayGain)} detail={`${formatSignedPercent(portfolioSummary.dayGainPercent)} today`} tone="positive" />
-            <MetricCard label="Total return" value={formatSignedCurrency(portfolioSummary.totalReturn)} detail={`${formatSignedPercent(portfolioSummary.totalReturnPercent, 1)} all time`} tone="positive" />
+            <MetricCard label="Today's gain" value={formatSignedCurrency(summary?.dayGain ?? 0)} detail={`${formatSignedPercent(summary?.dayGainPercent ?? 0)} today`} tone="positive" />
+            <MetricCard label="Total return" value={formatSignedCurrency(summary?.totalReturn ?? 0)} detail={`${formatSignedPercent(summary?.totalReturnPercent ?? 0, 1)} all time`} tone="positive" />
           </div>
           <AllocationCard />
         </div>

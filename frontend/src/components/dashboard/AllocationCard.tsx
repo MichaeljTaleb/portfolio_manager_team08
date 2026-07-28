@@ -1,14 +1,22 @@
 import { useEffect, useState } from 'react';
-import { allocations, holdings } from '../../data/mockPortfolio';
+import { fetchAllocation, fetchHoldings } from '../../api/client';
+import type { AllocationItem } from '../../types/portfolio';
 import { Card } from '../common/Card';
 
 export function AllocationCard() {
   const [drawn, setDrawn] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
+  const [allocations, setAllocations] = useState<AllocationItem[]>([]);
+  const [holdingsCount, setHoldingsCount] = useState(0);
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => setDrawn(true));
     return () => cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
+    fetchAllocation().then(setAllocations);
+    fetchHoldings().then((holdings) => setHoldingsCount(holdings.length));
   }, []);
 
   let cumulative = 0;
@@ -27,7 +35,7 @@ export function AllocationCard() {
       <span className="eyebrow">Asset allocation</span>
       <div className="allocation-content fade-slide-in">
         <div className="donut-wrap">
-          <svg viewBox="0 0 132 132" role="img" aria-label="Asset allocation: 68.5% stocks, 21.5% bonds, 10% cash">
+          <svg viewBox="0 0 132 132" role="img" aria-label="Asset allocation breakdown">
             <circle cx="66" cy="66" r="54" fill="none" stroke="var(--track)" strokeWidth="16" />
             {segments.map((segment, index) => (
               <circle
@@ -57,7 +65,7 @@ export function AllocationCard() {
             ) : (
               <>
                 <span>Holdings</span>
-                <strong>{holdings.length}</strong>
+                <strong>{holdingsCount}</strong>
               </>
             )}
           </div>
