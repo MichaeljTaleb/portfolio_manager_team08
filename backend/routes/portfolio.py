@@ -66,7 +66,7 @@ def allocation():
 @portfolio_bp.route('/performance')
 def performance():
     range_param = request.args.get('range', '1m')
-    days = {'1w': 7, '2w': 14, '1m': 30}.get(range_param, 30)
+    days = {'1w': 7, '2w': 14, '3w': 21, '1m': 30}.get(range_param, 30)
 
     cursor = get_cursor()
     cursor.execute(
