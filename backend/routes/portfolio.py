@@ -1,9 +1,8 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 
 from db import get_cursor
 
 portfolio_bp = Blueprint('portfolio', __name__)
-
 
 @portfolio_bp.route('/summary')
 def summary():
@@ -63,3 +62,22 @@ def allocation():
         {'name': 'Holdings', 'percentage': round(holdings_value / total * 100, 1)},
         {'name': 'Cash', 'percentage': round(cash_value / total * 100, 1)},
     ])
+
+@portfolio_bp.route('/performance')
+def performance():
+    range_param = request.args.get('range', '1m')
+    days = {'1w': 7, '2w': 14, '1m': 30}.get(range_param, 30)
+
+    cursor = get_cursor()
+    cursor.execute(
+        "SELECT snapshot_date, total_value FROM portfolio_history "
+        "WHERE snapshot_date >= CURDATE() - INTERVAL %s DAY ORDER BY snapshot_date",
+        (days,),
+    )
+    rows = cursor.fetchall()
+
+    return jsonify({
+        'values': [float(r['total_value']) for r in rows],
+        'axis': [str(r['snapshot_date']) for r in rows],
+        'label': range_param,
+    })
