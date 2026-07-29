@@ -25,6 +25,10 @@ export function SellHoldingForm({ holding, onCancel, onConfirm }: SellHoldingFor
       setError(`Enter a ${isCash ? 'amount' : 'quantity'} greater than 0.`);
       return;
     }
+    if (!isCash && !Number.isInteger(parsed)) {
+      setError('Enter a whole number of shares/units.');
+      return;
+    }
     if (parsed > holding.quantity) {
       setError(`You only hold ${formatQuantity(holding.quantity)} ${unitLabel}.`);
       return;
@@ -57,7 +61,7 @@ export function SellHoldingForm({ holding, onCancel, onConfirm }: SellHoldingFor
             <input
               type="number"
               min="0"
-              step={isCash ? '0.01' : '0.001'}
+              step={isCash ? '0.01' : '1'}
               max={holding.quantity}
               value={quantity}
               onChange={(event) => { setQuantity(event.target.value); setError(null); }}
