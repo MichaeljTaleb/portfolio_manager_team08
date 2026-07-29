@@ -1,22 +1,25 @@
-import asyncio
 import logging
 import math
-from datetime import date, datetime, timedelta
+import threading
+import time
+from datetime import date, datetime
 from decimal import Decimal
-from typing import Dict, List, Optional
+from typing import Optional
 
 import yfinance as yf
+from flask import Flask, jsonify
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from database import SessionLocal
-from models import Stock, UserAsset, PortfolioHistory
+from models import PortfolioHistory, Stock, UserAsset
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("automation_service")
 
-def sync_daily_stock_prices(db:Session) -> int:
-    logger.info("Starting daily stock price synchronization...")
+
+def sync_daily_stock_prices(db: Session) -> int:
+    logger.info("Starting automated daily stock price sync via yfinance...")
 
     holding_symbols = [s[0].upper() for s in db.query(UserAsset.symbol).distinct().all() if s[0]]
     existing_symbols = [s[0].upper() for s in db.query(Stock.symbol).distinct().all() if s[0]]
@@ -29,23 +32,23 @@ def sync_daily_stock_prices(db:Session) -> int:
     ]
 
     if not symbols_to_sync:
-        logger.info("No symbols to synchronize.")
+        logger.info("No equity symbols found in database to sync.")
         return 0
 
     inserted_records_count = 0
 
     try:
-        hist_df = yf.download(symbols_to_sync, period="2d", group_by='ticker', auto_adjust=True, threads=True)
+        hist_df = yf.download(symbols_to_sync, period="2d", group_by="ticker", auto_adjust=True, threads=True)
 
         if hist_df.empty:
-            logger.warning("No historical data fetched from Yahoo Finance.")
+            logger.warning("No data returned from yfinance during automated sync.")
             return 0
 
-        open_prices = hist_df['Open'] if 'Open' in hist_df else hist_df
+        open_prices = hist_df["Open"] if "Open" in hist_df else hist_df
 
         for timestamp, row in open_prices.iterrows():
             record_date: date = timestamp.date()
-            
+
             for symbol in symbols_to_sync:
                 existing_entry = (
                     db.query(Stock)
@@ -60,7 +63,7 @@ def sync_daily_stock_prices(db:Session) -> int:
                 if len(symbols_to_sync) == 1:
                     price_val = row if isinstance(row, (int, float, Decimal)) else row.iloc[0]
                 elif symbol in row:
-                    price_val = row[symbol] 
+                    price_val = row[symbol]
 
                 if price_val is not None and not math.isnan(price_val):
                     decimal_price = Decimal(str(round(float(price_val), 4)))
@@ -76,6 +79,7 @@ def sync_daily_stock_prices(db:Session) -> int:
                     )
                     db.add(stock_record)
                     inserted_records_count += 1
+
         db.commit()
         logger.info(f"Inserted {inserted_records_count} new stock price records.")
         return inserted_records_count
@@ -85,19 +89,19 @@ def sync_daily_stock_prices(db:Session) -> int:
         db.rollback()
         return 0
 
+
 def record_daily_portfolio_snapshot(db: Session) -> Optional[PortfolioHistory]:
     today: date = date.today()
     logger.info(f"Recording daily portfolio snapshot for {today}")
 
     try:
         existing_snapshot = db.query(PortfolioHistory).filter(PortfolioHistory.snapshot_date == today).first()
-
         latest_price_date = db.query(func.max(Stock.price_date)).scalar() or today
 
         user_assets = db.query(UserAsset).all()
 
-        total_stock_value = Decimal(0)
-        cash_value = Decimal(0)
+        total_stock_value = Decimal("0.0000")
+        cash_value = Decimal("0.0000")
 
         for asset in user_assets:
             if asset.symbol.upper() in ["USD", "CASH"]:
@@ -111,7 +115,7 @@ def record_daily_portfolio_snapshot(db: Session) -> Optional[PortfolioHistory]:
             )
 
             unit_price = stock_entry.open_price if stock_entry else asset.avg_cost_basis
-            total_stock_value += unit_price * asset.quantity
+            total_stock_value += unit_price * Decimal(str(asset.quantity))
 
         total_nav = total_stock_value + cash_value
 
@@ -142,7 +146,7 @@ def record_daily_portfolio_snapshot(db: Session) -> Optional[PortfolioHistory]:
 def run_daily_automation_job():
     db: Session = SessionLocal()
     try:
-        logger.info("Executing scheduled daily automation job...")
+        logger.info("Executing scheduled daily database automation tasks...")
         sync_daily_stock_prices(db)
         record_daily_portfolio_snapshot(db)
     finally:
@@ -152,39 +156,41 @@ def run_daily_automation_job():
 class DailyAutomationScheduler:
     def __init__(self):
         self.is_running = False
+        self._thread: Optional[threading.Thread] = None
 
-    async def start_scheduler(self, interval_hours: float = 24.0):
+    def start_scheduler(self, interval_hours: float = 24.0):
+        if self.is_running:
+            return
+
         self.is_running = True
+        self._thread = threading.Thread(target=self._run_loop, args=(interval_hours,), daemon=True)
+        self._thread.start()
+        logger.info(f"Daily Automation Scheduler thread launched (Interval: {interval_hours} hours).")
 
+    def _run_loop(self, interval_hours: float):
+        # Initial catch-up cycle on boot
         run_daily_automation_job()
 
         while self.is_running:
             try:
-                await asyncio.sleep(interval_hours * 3600)
+                time.sleep(interval_hours * 3600)
                 if self.is_running:
                     run_daily_automation_job()
-            except asyncio.CancelledError:
-                logger.info("Daily automation scheduler has been cancelled.")
-                break
             except Exception as e:
-                logger.error(f"Error in daily automation scheduler: {e}")
+                logger.error(f"Error in daily automation scheduler thread: {e}")
 
     def stop_scheduler(self):
         self.is_running = False
-        logger.info("Daily automation scheduler has been stopped.")
+        logger.info("Automation scheduler stopped.")
+
 
 automation_scheduler = DailyAutomationScheduler()
 
-def register_automation_routes(app):
-    @app.post("/api/admin/trigger-daily-sync")
+
+def register_automation_routes(app: Flask):
+    @app.route("/api/admin/trigger-daily-sync", methods=["POST"])
     def trigger_daily_sync():
         run_daily_automation_job()
-        return {"message": "Daily automation job executed successfully."}
+        return jsonify({"status": "success", "message": "Daily stock sync & portfolio snapshot completed."})
 
-    @app.on_event("startup")
-    async def on_startup():
-        asyncio.create_task(automation_scheduler.start_scheduler(interval_hours=24.0))
-
-    @app.on_event("shutdown")
-    async def on_shutdown():
-        automation_scheduler.stop_scheduler()
+    automation_scheduler.start_scheduler(interval_hours=24.0)

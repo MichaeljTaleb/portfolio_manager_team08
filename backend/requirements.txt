@@ -1,4 +1,6 @@
 fastapi
+flask
+flask-sock
 uvicorn[standard]
 sqlalchemy
 pymysql
