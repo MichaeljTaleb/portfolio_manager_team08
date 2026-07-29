@@ -34,17 +34,17 @@ export function DashboardPage({ onViewHoldings }: DashboardPageProps) {
           <h1>{getGreeting(now)}, Sang</h1>
           <div className="page-subline">
             <p>Here&apos;s how your portfolio is doing today.</p>
-            <span>As of {formatAsOf(now)}</span>
           </div>
         </div>
+        <span className="page-heading-asof">As of {formatAsOf(now)}</span>
       </div>
 
       <div className="dashboard-grid">
         <PerformanceChart range={range} onRangeChange={setRange} totalValue={summary?.totalValue ?? 0} />
         <div className="dashboard-rail">
           <div className="metric-grid">
-            <MetricCard label="Today's gain" value={formatSignedCurrency(summary?.dayGain ?? 0)} detail={`${formatSignedPercent(summary?.dayGainPercent ?? 0)} today`} tone="positive" />
-            <MetricCard label="Total return" value={formatSignedCurrency(summary?.totalReturn ?? 0)} detail={`${formatSignedPercent(summary?.totalReturnPercent ?? 0, 1)} all time`} tone="positive" />
+            <MetricCard label="Today's change" value={formatSignedCurrency(summary?.dayGain ?? 0)} detail={`${formatSignedPercent(summary?.dayGainPercent ?? 0)} today`} tone="positive" />
+            <MetricCard label="Total return" value={formatSignedCurrency(summary?.totalReturn ?? 0)} detail={`${formatSignedPercent(summary?.totalReturnPercent ?? 0)} all time`} tone="positive" />
           </div>
           <AllocationCard />
         </div>
@@ -52,7 +52,9 @@ export function DashboardPage({ onViewHoldings }: DashboardPageProps) {
 
       <div className="section-heading">
         <h2>Portfolio holdings</h2>
-        <button type="button" className="text-button" onClick={onViewHoldings}>View all holdings</button>
+        <button type="button" className="text-button" onClick={onViewHoldings}>
+          View all holdings <span className="text-button-arrow">&rarr;</span>
+        </button>
       </div>
       <HoldingsTable holdings={holdings.slice(0, 5)} />
     </>

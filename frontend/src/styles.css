@@ -48,6 +48,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .page-heading { margin-bottom: 20px; }
 .page-heading h1 { margin: 0 0 4px; font-size: 26px; letter-spacing: -0.025em; font-weight: 600; }
 .page-heading p, .page-heading > span { margin: 0; color: var(--muted); font-size: 13px; }
+.page-heading-asof { white-space: nowrap; align-self: flex-end; }
 .page-subline { display: flex; align-items: baseline; flex-wrap: wrap; gap: 10px; }
 .page-subline p, .page-subline span { margin: 0; color: var(--muted); font-size: 13px; }
 .section-heading { margin: 32px 0 12px; }
@@ -195,6 +196,8 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
 .text-button { border: 0; background: none; color: var(--accent-hover); cursor: pointer; font-size: 13px; }
 .text-button:hover { color: #bfdbfe; }
+.text-button-arrow { display: inline-block; transition: transform 0.15s ease; }
+.text-button:hover .text-button-arrow { transform: translateX(3px); }
 .primary-button { border: 1px solid var(--accent); background: transparent; color: var(--accent-hover); padding: 9px 14px; border-radius: var(--radius-md); cursor: pointer; }
 .primary-button:hover { background: var(--accent-soft); }
 .danger-button { border: 1px solid var(--negative); background: transparent; color: var(--negative); padding: 9px 14px; border-radius: var(--radius-md); cursor: pointer; }
@@ -214,10 +217,6 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .search-input::placeholder { color: var(--faint); }
 .search-input:focus, .select-input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .select-input { flex: none; cursor: pointer; }
-.empty-state { padding: 70px 24px; text-align: center; }
-.empty-icon { display: inline-grid; place-items: center; width: 42px; height: 42px; border-radius: 12px; background: var(--accent-soft); color: var(--accent-hover); font-size: 22px; }
-.empty-state h2 { margin: 16px 0 8px; font-size: 20px; }
-.empty-state p { max-width: 480px; margin: 0 auto; color: var(--muted); font-size: 14px; }
 
 .modal-overlay { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 24px; background: rgba(6, 10, 20, 0.6); backdrop-filter: blur(2px); }
 .modal { width: 100%; max-width: 440px; padding: 22px 24px 24px; }
