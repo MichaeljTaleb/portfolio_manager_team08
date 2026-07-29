@@ -25,11 +25,35 @@ def _build_holding(session, symbol, quantity):
         'value': value,
     }
 
+
+# Cash lives as its own row in user_assets (symbol='CASH', avg_cost_basis=1),
+# matching what automation_service.py expects.
+def _get_cash_balance(session):
+    row = session.execute(
+        text("SELECT quantity FROM user_assets WHERE symbol = 'CASH'")
+    ).mappings().first()
+    return float(row['quantity']) if row else 0.0
+
+
+def _set_cash_balance(session, new_cash):
+    session.execute(
+        text(
+            """
+            INSERT INTO user_assets (symbol, quantity, avg_cost_basis)
+            VALUES ('CASH', :amount, 1)
+            ON DUPLICATE KEY UPDATE quantity = :amount
+            """
+        ),
+        {"amount": new_cash},
+    )
+
 # Route to list all holdings with their allocations
 @holdings_bp.route('/')
 def list_holdings():
     with SessionLocal() as session:
-        assets = session.execute(text("SELECT symbol, quantity FROM user_assets")).mappings().all()
+        assets = session.execute(
+            text("SELECT symbol, quantity FROM user_assets WHERE symbol != 'CASH'")
+        ).mappings().all()
         holdings = [_build_holding(session, a['symbol'], a['quantity']) for a in assets]
 
         total = sum(h['value'] for h in holdings) or 1
@@ -49,23 +73,25 @@ def get_holding(ticker):
         if asset is None:
             return jsonify({'error': 'not found'}), 404
 
-        all_assets = session.execute(text("SELECT symbol, quantity FROM user_assets")).mappings().all()
+        all_assets = session.execute(
+            text("SELECT symbol, quantity FROM user_assets WHERE symbol != 'CASH'")
+        ).mappings().all()
         total = sum(_build_holding(session, a['symbol'], a['quantity'])['value'] for a in all_assets) or 1
 
         holding = _build_holding(session, asset['symbol'], asset['quantity'])
         holding['allocation'] = round(holding['value'] / total * 100, 1)
         return jsonify(holding)
 
-# Recalculates today's portfolio_history row after a buy/sell changes cash + holdings value
+# Recalculates today's portfolio_history row after a buy/sell changes cash + holdings value.
+# Keeps the user_assets CASH row and portfolio_history.cash_balance in sync.
 def _update_todays_snapshot(session, cash_delta):
-    assets = session.execute(text("SELECT symbol, quantity FROM user_assets")).mappings().all()
+    assets = session.execute(
+        text("SELECT symbol, quantity FROM user_assets WHERE symbol != 'CASH'")
+    ).mappings().all()
     holdings_value = sum(_build_holding(session, a['symbol'], a['quantity'])['value'] for a in assets)
 
-    row = session.execute(
-        text("SELECT cash_balance FROM portfolio_history ORDER BY snapshot_date DESC LIMIT 1")
-    ).mappings().first()
-    current_cash = float(row['cash_balance']) if row and row['cash_balance'] is not None else 0.0
-    new_cash = current_cash + cash_delta
+    new_cash = _get_cash_balance(session) + cash_delta
+    _set_cash_balance(session, new_cash)
 
     session.execute(
         text(
@@ -87,12 +113,7 @@ def create_holding():
     cost = data['quantity'] * data['price']
 
     with SessionLocal() as session:
-        row = session.execute(
-            text("SELECT cash_balance FROM portfolio_history ORDER BY snapshot_date DESC LIMIT 1")
-        ).mappings().first()
-        current_cash = float(row['cash_balance']) if row and row['cash_balance'] is not None else 0.0
-
-        if cost > current_cash:
+        if cost > _get_cash_balance(session):
             return jsonify({'error': 'insufficient cash'}), 400
 
         session.execute(

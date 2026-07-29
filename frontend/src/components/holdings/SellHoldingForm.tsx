@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import type { Holding } from '../../types/portfolio';
+import { useLivePrices } from '../../contexts/LivePricesContext';
 import { formatCurrency, formatQuantity } from '../../utils/formatters';
 
 interface SellHoldingFormProps {
@@ -13,6 +14,7 @@ export function SellHoldingForm({ holding, onCancel, onConfirm }: SellHoldingFor
   const isCash = holding.type === 'Cash';
   const [quantity, setQuantity] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const livePrices = useLivePrices();
 
   const actionLabel = isCash ? 'Withdraw' : 'Sell';
   const unitLabel = isCash ? '$' : 'shares/units';
@@ -37,7 +39,8 @@ export function SellHoldingForm({ holding, onCancel, onConfirm }: SellHoldingFor
     onConfirm(parsed);
   };
 
-  const estimatedProceeds = (Number(quantity) || 0) * holding.currentPrice;
+  const livePrice = livePrices[holding.ticker] ?? holding.currentPrice;
+  const estimatedProceeds = (Number(quantity) || 0) * livePrice;
 
   return (
     <div className="modal-overlay" role="presentation" onClick={onCancel}>

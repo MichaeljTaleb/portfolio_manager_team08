@@ -6,6 +6,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from typing import Optional
 
+import pandas as pd
 import yfinance as yf
 from flask import Flask, jsonify
 from sqlalchemy import func
@@ -44,7 +45,10 @@ def sync_daily_stock_prices(db: Session) -> int:
             logger.warning("No data returned from yfinance during automated sync.")
             return 0
 
-        open_prices = hist_df["Open"] if "Open" in hist_df else hist_df
+        if isinstance(hist_df.columns, pd.MultiIndex):
+            open_prices = hist_df.xs("Open", level=1, axis=1)
+        else:
+            open_prices = hist_df[["Open"]].rename(columns={"Open": symbols_to_sync[0]})
 
         for timestamp, row in open_prices.iterrows():
             record_date: date = timestamp.date()
@@ -59,11 +63,7 @@ def sync_daily_stock_prices(db: Session) -> int:
                 if existing_entry:
                     continue
 
-                price_val = None
-                if len(symbols_to_sync) == 1:
-                    price_val = row if isinstance(row, (int, float, Decimal)) else row.iloc[0]
-                elif symbol in row:
-                    price_val = row[symbol]
+                price_val = row[symbol] if symbol in row.index else None
 
                 if price_val is not None and not math.isnan(price_val):
                     decimal_price = Decimal(str(round(float(price_val), 4)))

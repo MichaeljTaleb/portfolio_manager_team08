@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { fetchAllocation, fetchHoldings } from '../../api/client';
+import { useLivePrices } from '../../contexts/LivePricesContext';
 import type { AllocationItem } from '../../types/portfolio';
 import { Card } from '../common/Card';
 
@@ -8,6 +9,7 @@ export function AllocationCard() {
   const [hovered, setHovered] = useState<string | null>(null);
   const [allocations, setAllocations] = useState<AllocationItem[]>([]);
   const [holdingsCount, setHoldingsCount] = useState(0);
+  const livePrices = useLivePrices();
 
   useEffect(() => {
     const frame = requestAnimationFrame(() => setDrawn(true));
@@ -18,6 +20,10 @@ export function AllocationCard() {
     fetchAllocation().then(setAllocations);
     fetchHoldings().then((holdings) => setHoldingsCount(holdings.length));
   }, []);
+
+  useEffect(() => {
+    fetchAllocation().then(setAllocations);
+  }, [livePrices]);
 
   let cumulative = 0;
   const circumference = 2 * Math.PI * 54;

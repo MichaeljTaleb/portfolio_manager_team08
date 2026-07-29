@@ -65,8 +65,7 @@ class Transaction(Base):
 class PortfolioHistory(Base):
     __tablename__ = "portfolio_history"
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    snapshot_date: Mapped[date] = mapped_column(Date, nullable=False, unique=True)
+    snapshot_date: Mapped[date] = mapped_column(Date, primary_key=True)
     total_value: Mapped[Decimal] = mapped_column(DECIMAL(12, 4), nullable=False)
     cash_balance: Mapped[Decimal] = mapped_column(DECIMAL(12, 4), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)

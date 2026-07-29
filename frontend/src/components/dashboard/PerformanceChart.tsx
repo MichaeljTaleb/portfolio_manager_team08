@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { MouseEvent } from 'react';
 import type { PerformanceSeries, TimeRange } from '../../types/portfolio';
 import { buildChartPaths } from '../../utils/chart';
@@ -23,13 +23,15 @@ export function PerformanceChart({ range, onRangeChange, totalValue }: Performan
     fetchPerformance(range).then(setSeries);
   }, [range]);
 
-  const values = series.values.length ? series.values : [totalValue];
-  const paths = buildChartPaths(values);
-  const first = values[0];
-  const last = values.at(-1) ?? first;
-  const change = last - first;
-  const percent = first ? ((last - first) / first) * 100 : 0;
-  const tone = change >= 0 ? 'positive' : 'negative';
+  const { values, paths, first, last, change, percent, tone } = useMemo(() => {
+    const vals = series.values.length ? series.values : [totalValue];
+    const pths = buildChartPaths(vals);
+    const f = vals[0];
+    const l = vals.at(-1) ?? f;
+    const c = l - f;
+    const p = f ? ((l - f) / f) * 100 : 0;
+    return { values: vals, paths: pths, first: f, last: l, change: c, percent: p, tone: c >= 0 ? 'positive' : 'negative' };
+  }, [series.values, totalValue]);
 
   const hovered = hoverIndex === null ? null : paths.points[hoverIndex];
   const hoveredLabel = hoverIndex === null ? null : series.dates[hoverIndex];

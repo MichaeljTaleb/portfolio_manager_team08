@@ -42,7 +42,9 @@ def summary():
 @portfolio_bp.route('/allocation')
 def allocation():
     with SessionLocal() as session:
-        assets = session.execute(text("SELECT symbol, quantity FROM user_assets")).mappings().all()
+        assets = session.execute(
+            text("SELECT symbol, quantity FROM user_assets WHERE symbol != 'CASH'")
+        ).mappings().all()
 
         holdings_value = 0.0
         for asset in assets:
@@ -53,10 +55,11 @@ def allocation():
             if price_row:
                 holdings_value += float(asset['quantity']) * float(price_row['open_price'])
 
+        # Cash lives as its own row in user_assets (symbol='CASH'), matching automation_service.py.
         row = session.execute(
-            text("SELECT cash_balance FROM portfolio_history ORDER BY snapshot_date DESC LIMIT 1")
+            text("SELECT quantity FROM user_assets WHERE symbol = 'CASH'")
         ).mappings().first()
-        cash_value = float(row['cash_balance']) if row and row['cash_balance'] is not None else 0.0
+        cash_value = float(row['quantity']) if row else 0.0
 
         total = (holdings_value + cash_value) or 1
         return jsonify([

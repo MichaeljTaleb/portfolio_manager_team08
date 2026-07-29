@@ -5,6 +5,7 @@ import { AddHoldingForm } from '../components/holdings/AddHoldingForm';
 import { HoldingsTable } from '../components/holdings/HoldingsTable';
 import { SellHoldingForm } from '../components/holdings/SellHoldingForm';
 import { buyHolding, fetchHoldings, sellHolding } from '../api/client';
+import { useLivePrices, withLiveDailyChange } from '../contexts/LivePricesContext';
 import type { AssetType, Holding } from '../types/portfolio';
 import { formatCurrency } from '../utils/formatters';
 
@@ -37,6 +38,7 @@ export function HoldingsPage() {
   const [pendingSale, setPendingSale] = useState<Holding | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [lastRemoved, setLastRemoved] = useState<{ holding: Holding; index: number } | null>(null);
+  const livePrices = useLivePrices();
 
   const loadHoldings = async () => {
     const backendHoldings = await fetchHoldings();
@@ -128,8 +130,9 @@ export function HoldingsPage() {
   };
 
   const visibleHoldings = useMemo(() => {
+    const liveHoldings = withLiveDailyChange(holdings, livePrices);
     const trimmedQuery = query.trim().toLowerCase();
-    const filtered = holdings.filter((holding) => {
+    const filtered = liveHoldings.filter((holding) => {
       const matchesQuery =
         trimmedQuery === '' ||
         holding.ticker.toLowerCase().includes(trimmedQuery) ||
@@ -156,7 +159,7 @@ export function HoldingsPage() {
         sorted.sort((a, b) => a.name.localeCompare(b.name));
     }
     return sorted;
-  }, [holdings, query, assetFilter, sortBy]);
+  }, [holdings, livePrices, query, assetFilter, sortBy]);
 
   return (
     <>
