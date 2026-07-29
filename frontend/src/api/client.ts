@@ -90,11 +90,15 @@ export async function fetchPerformance(range: TimeRange): Promise<PerformanceSer
 }
 
 export async function buyHolding(ticker: string, quantity: number, price: number): Promise<void> {
-  await fetch(`${BASE_URL}/api/holdings/`, {
+  const response = await fetch(`${BASE_URL}/api/holdings/`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ticker, quantity, price }),
   });
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new Error(body?.error ?? 'Failed to add holding.');
+  }
 }
 
 export async function sellHolding(ticker: string, quantity: number, price: number): Promise<void> {
