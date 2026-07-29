@@ -80,12 +80,15 @@ export function HoldingsPage() {
     setPendingRemoval(null);
   };
 
-  const handleConfirmSale = (quantity: number) => {
+  const handleConfirmSale = async (quantity: number) => {
     if (!pendingSale) return;
     const isFullSale = quantity >= pendingSale.quantity;
     const isCash = pendingSale.type === 'Cash';
 
-    if (isFullSale) {
+    if (pendingSale.type === 'Stocks') {
+      await sellHolding(pendingSale.ticker, quantity, pendingSale.currentPrice);
+      await loadHoldings();
+    } else if (isFullSale) {
       const index = holdings.findIndex((holding) => holding.id === pendingSale.id);
       setHoldings((current) => recalculateAllocations(current.filter((holding) => holding.id !== pendingSale.id)));
       setLastRemoved({ holding: pendingSale, index });

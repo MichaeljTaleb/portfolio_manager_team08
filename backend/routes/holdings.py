@@ -84,7 +84,17 @@ def _update_todays_snapshot(session, cash_delta):
 @holdings_bp.route('/', methods=['POST'])
 def create_holding():
     data = request.get_json()
+    cost = data['quantity'] * data['price']
+
     with SessionLocal() as session:
+        row = session.execute(
+            text("SELECT cash_balance FROM portfolio_history ORDER BY snapshot_date DESC LIMIT 1")
+        ).mappings().first()
+        current_cash = float(row['cash_balance']) if row and row['cash_balance'] is not None else 0.0
+
+        if cost > current_cash:
+            return jsonify({'error': 'insufficient cash'}), 400
+
         session.execute(
             text(
                 """
@@ -99,7 +109,7 @@ def create_holding():
             text("INSERT INTO transactions (symbol, action, quantity, price) VALUES (:symbol, 'BUY', :quantity, :price)"),
             {"symbol": data['ticker'], "quantity": data['quantity'], "price": data['price']},
         )
-        _update_todays_snapshot(session, -(data['quantity'] * data['price']))
+        _update_todays_snapshot(session, -cost)
         session.commit()
         return jsonify({'ticker': data['ticker'], 'quantity': data['quantity']}), 201
 
