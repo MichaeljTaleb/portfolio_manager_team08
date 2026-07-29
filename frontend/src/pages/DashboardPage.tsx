@@ -43,8 +43,8 @@ export function DashboardPage({ onViewHoldings }: DashboardPageProps) {
         <PerformanceChart range={range} onRangeChange={setRange} totalValue={summary?.totalValue ?? 0} />
         <div className="dashboard-rail">
           <div className="metric-grid">
-            <MetricCard label="Today's change" value={formatSignedCurrency(summary?.dayGain ?? 0)} detail={`${formatSignedPercent(summary?.dayGainPercent ?? 0)} today`} tone="positive" />
-            <MetricCard label="Total return" value={formatSignedCurrency(summary?.totalReturn ?? 0)} detail={`${formatSignedPercent(summary?.totalReturnPercent ?? 0)} all time`} tone="positive" />
+            <MetricCard label="Today's change" value={formatSignedCurrency(summary?.dayGain ?? 0)} detail={`${formatSignedPercent(summary?.dayGainPercent ?? 0)} today`} tone={(summary?.dayGain ?? 0) < 0 ? 'negative' : 'positive'} />
+            <MetricCard label="Total return" value={formatSignedCurrency(summary?.totalReturn ?? 0)} detail={`${formatSignedPercent(summary?.totalReturnPercent ?? 0)} all time`} tone={(summary?.totalReturn ?? 0) < 0 ? 'negative' : 'positive'} />
           </div>
           <AllocationCard />
         </div>
