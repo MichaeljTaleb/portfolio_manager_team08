@@ -1,4 +1,4 @@
-export type View = 'dashboard' | 'holdings' | 'analytics';
+export type View = 'dashboard' | 'holdings';
 
 interface AppHeaderProps {
   activeView: View;
@@ -14,7 +14,7 @@ export function AppHeader({ activeView, onChangeView }: AppHeaderProps) {
         </button>
 
         <nav className="primary-nav" aria-label="Primary navigation">
-          {(['dashboard', 'holdings', 'analytics'] as const).map((view) => (
+          {(['dashboard', 'holdings'] as const).map((view) => (
             <button
               key={view}
               type="button"
