@@ -5,9 +5,10 @@ interface ToastProps {
   onDismiss: () => void;
   onUndo?: () => void;
   duration?: number;
+  tone?: 'neutral' | 'success' | 'error';
 }
 
-export function Toast({ message, onDismiss, onUndo, duration = 5000 }: ToastProps) {
+export function Toast({ message, onDismiss, onUndo, duration = 5000, tone = 'neutral' }: ToastProps) {
   useEffect(() => {
     const timer = setTimeout(onDismiss, duration);
     return () => clearTimeout(timer);
@@ -15,7 +16,7 @@ export function Toast({ message, onDismiss, onUndo, duration = 5000 }: ToastProp
   }, []);
 
   return (
-    <div className="toast" role="status">
+    <div className={`toast toast-${tone}`} role="status">
       <span>{message}</span>
       {onUndo && (
         <button

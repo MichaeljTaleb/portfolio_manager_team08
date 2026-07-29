@@ -37,6 +37,7 @@ export function HoldingsPage() {
   const [pendingRemoval, setPendingRemoval] = useState<Holding | null>(null);
   const [pendingSale, setPendingSale] = useState<Holding | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastTone, setToastTone] = useState<'neutral' | 'success' | 'error'>('neutral');
   const [lastRemoved, setLastRemoved] = useState<{ holding: Holding; index: number } | null>(null);
   const livePrices = useLivePrices();
 
@@ -53,18 +54,25 @@ export function HoldingsPage() {
   }, []);
 
   const handleAddHolding = async (holding: Omit<Holding, 'id' | 'allocation'>) => {
-    if (holding.type === 'Stocks') {
-      await buyHolding(holding.ticker, holding.quantity, holding.currentPrice);
-      await loadHoldings();
-    } else {
-      const newHolding: Holding = {
-        ...holding,
-        id: `${holding.ticker}-${holdings.length}-${Math.random().toString(36).slice(2, 8)}`,
-        allocation: 0,
-      };
-      setHoldings((current) => recalculateAllocations([...current, newHolding]));
+    try {
+      if (holding.type === 'Stocks') {
+        await buyHolding(holding.ticker, holding.quantity, holding.currentPrice);
+        await loadHoldings();
+      } else {
+        const newHolding: Holding = {
+          ...holding,
+          id: `${holding.ticker}-${holdings.length}-${Math.random().toString(36).slice(2, 8)}`,
+          allocation: 0,
+        };
+        setHoldings((current) => recalculateAllocations([...current, newHolding]));
+      }
+      setIsAdding(false);
+      setToastTone('success');
+      setToastMessage(`${holding.ticker} added to holdings.`);
+    } catch (error) {
+      setToastTone('error');
+      setToastMessage(error instanceof Error ? error.message : 'Failed to add holding.');
     }
-    setIsAdding(false);
   };
 
   const handleConfirmRemove = async () => {
@@ -78,6 +86,7 @@ export function HoldingsPage() {
       setHoldings((current) => recalculateAllocations(current.filter((holding) => holding.id !== pendingRemoval.id)));
       setLastRemoved({ holding: pendingRemoval, index });
     }
+    setToastTone('neutral');
     setToastMessage(`${pendingRemoval.ticker} removed from holdings.`);
     setPendingRemoval(null);
   };
@@ -111,6 +120,7 @@ export function HoldingsPage() {
       setLastRemoved(null);
     }
 
+    setToastTone('neutral');
     setToastMessage(
       isCash
         ? `${formatCurrency(quantity)} withdrawn from ${pendingSale.ticker}.`
@@ -164,8 +174,7 @@ export function HoldingsPage() {
   return (
     <>
       <div className="page-heading holdings-heading">
-        <div><h1>Holdings</h1><p>{holdings.length} positions across stocks, bonds, and cash.</p></div>
-        <button type="button" className="primary-button" onClick={() => setIsAdding(true)}>+ Add holding</button>
+        <div><h1>Holdings</h1><p>{holdings.length} positions across stocks and bonds</p></div>
       </div>
 
       <div className="holdings-toolbar">
@@ -186,7 +195,6 @@ export function HoldingsPage() {
           <option value="All">All asset types</option>
           <option value="Stocks">Stocks</option>
           <option value="Bonds">Bonds</option>
-          <option value="Cash">Cash</option>
         </select>
         <select
           className="select-input"
@@ -198,6 +206,7 @@ export function HoldingsPage() {
             <option key={option.value} value={option.value}>Sort by: {option.label}</option>
           ))}
         </select>
+        <button type="button" className="primary-button holdings-add-button" onClick={() => setIsAdding(true)}>+ Add holding</button>
       </div>
 
       <HoldingsTable holdings={visibleHoldings} onRequestSell={setPendingSale} onRequestRemove={setPendingRemoval} />
@@ -220,6 +229,7 @@ export function HoldingsPage() {
       {toastMessage && (
         <Toast
           message={toastMessage}
+          tone={toastTone}
           onDismiss={() => setToastMessage(null)}
           onUndo={lastRemoved ? handleUndoRemove : undefined}
         />
