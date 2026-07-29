@@ -56,14 +56,22 @@ export function useLivePrices(): LivePricesMap {
   return useContext(LivePricesContext);
 }
 
-// Applies live daily % change to each holding, comparing the live price
-// against the REST-fetched currentPrice (today's opening price).
+// Applies live prices and daily % change to each holding by comparing the
+// incoming websocket price against the REST-fetched currentPrice.
 export function withLiveDailyChange(holdings: Holding[], livePrices: LivePricesMap): Holding[] {
   return holdings.map((holding) => {
     const livePrice = livePrices[holding.ticker];
     if (livePrice === undefined || !holding.currentPrice) return holding;
-    const dailyChange = ((livePrice - holding.currentPrice) / holding.currentPrice) * 100;
-    return { ...holding, dailyChange };
+
+    const basePrice = holding.currentPrice;
+    const dailyChange = ((livePrice - basePrice) / basePrice) * 100;
+
+    return {
+      ...holding,
+      currentPrice: livePrice,
+      value: holding.quantity * livePrice,
+      dailyChange,
+    };
   });
 }
 
