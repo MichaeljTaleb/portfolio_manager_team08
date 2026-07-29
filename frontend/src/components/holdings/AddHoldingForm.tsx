@@ -4,10 +4,10 @@ import type { AssetType, Holding } from '../../types/portfolio';
 
 interface AddHoldingFormProps {
   onCancel: () => void;
-  onSubmit: (holding: Omit<Holding, 'id' | 'allocation'>) => void;
+  onSubmit: (holding: Omit<Holding, 'id' | 'allocation'>) => void | Promise<void>;
 }
 
-const assetTypes: AssetType[] = ['Stocks', 'Bonds', 'Cash'];
+const assetTypes: AssetType[] = ['Stocks', 'Bonds'];
 
 const toShortCode = (value: string, fallback: string) => {
   const cleaned = value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -17,6 +17,7 @@ const toShortCode = (value: string, fallback: string) => {
 export function AddHoldingForm({ onCancel, onSubmit }: AddHoldingFormProps) {
   const [type, setType] = useState<AssetType>('Stocks');
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Stock fields
   const [ticker, setTicker] = useState('');
@@ -31,12 +32,9 @@ export function AddHoldingForm({ onCancel, onSubmit }: AddHoldingFormProps) {
   const [couponRate, setCouponRate] = useState('');
   const [maturityDate, setMaturityDate] = useState('');
 
-  // Cash fields
-  const [accountName, setAccountName] = useState('');
-  const [amount, setAmount] = useState('');
-
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (isSubmitting) return;
 
     if (type === 'Stocks') {
       const trimmedTicker = ticker.trim().toUpperCase();
@@ -47,33 +45,39 @@ export function AddHoldingForm({ onCancel, onSubmit }: AddHoldingFormProps) {
       if (!Number.isFinite(quantity) || quantity <= 0) return setError('Enter a quantity greater than 0.');
       if (!Number.isFinite(cost) || cost <= 0) return setError('Enter an average cost greater than 0.');
 
-      onSubmit({
-        ticker: trimmedTicker,
-        name: trimmedTicker,
-        type,
-        quantity,
-        currentPrice: cost,
-        value: quantity * cost,
-        dailyChange: 0,
-        totalGainLoss: 0,
-        purchaseDate: purchaseDate || undefined,
-      });
+      setIsSubmitting(true);
+      try {
+        await onSubmit({
+          ticker: trimmedTicker,
+          name: trimmedTicker,
+          type,
+          quantity,
+          currentPrice: cost,
+          value: quantity * cost,
+          dailyChange: 0,
+          totalGainLoss: 0,
+          purchaseDate: purchaseDate || undefined,
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
       return;
     }
 
-    if (type === 'Bonds') {
-      const trimmedName = bondName.trim();
-      const quantity = Number(bondQuantity);
-      const price = Number(purchasePrice);
-      const coupon = Number(couponRate);
+    const trimmedName = bondName.trim();
+    const quantity = Number(bondQuantity);
+    const price = Number(purchasePrice);
+    const coupon = Number(couponRate);
 
-      if (!trimmedName) return setError('Enter a bond name.');
-      if (!Number.isFinite(quantity) || quantity <= 0) return setError('Enter a quantity greater than 0.');
-      if (!Number.isFinite(price) || price <= 0) return setError('Enter a purchase price greater than 0.');
-      if (!Number.isFinite(coupon) || coupon < 0) return setError('Enter a valid coupon rate.');
-      if (!maturityDate) return setError('Enter a maturity date.');
+    if (!trimmedName) return setError('Enter a bond name.');
+    if (!Number.isFinite(quantity) || quantity <= 0) return setError('Enter a quantity greater than 0.');
+    if (!Number.isFinite(price) || price <= 0) return setError('Enter a purchase price greater than 0.');
+    if (!Number.isFinite(coupon) || coupon < 0) return setError('Enter a valid coupon rate.');
+    if (!maturityDate) return setError('Enter a maturity date.');
 
-      onSubmit({
+    setIsSubmitting(true);
+    try {
+      await onSubmit({
         ticker: toShortCode(trimmedName, 'BOND'),
         name: trimmedName,
         type,
@@ -85,25 +89,9 @@ export function AddHoldingForm({ onCancel, onSubmit }: AddHoldingFormProps) {
         couponRate: coupon,
         maturityDate,
       });
-      return;
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const trimmedAccount = accountName.trim();
-    const parsedAmount = Number(amount);
-
-    if (!trimmedAccount) return setError('Enter an account name.');
-    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) return setError('Enter an amount greater than 0.');
-
-    onSubmit({
-      ticker: toShortCode(trimmedAccount, 'CASH'),
-      name: trimmedAccount,
-      type,
-      quantity: parsedAmount,
-      currentPrice: 1,
-      value: parsedAmount,
-      dailyChange: 0,
-      totalGainLoss: 0,
-    });
   };
 
   return (
@@ -117,12 +105,16 @@ export function AddHoldingForm({ onCancel, onSubmit }: AddHoldingFormProps) {
       >
         <div className="modal-header">
           <h2 id="add-holding-title">Add holding</h2>
-          <button type="button" className="modal-close" aria-label="Close" onClick={onCancel}>×</button>
+          <button type="button" className="modal-close" aria-label="Close" onClick={onCancel} disabled={isSubmitting}>×</button>
         </div>
         <form className="modal-form" onSubmit={handleSubmit}>
+          <fieldset className="modal-fieldset" disabled={isSubmitting}>
           <label className="form-field">
             <span>Asset type</span>
-            <select value={type} onChange={(event) => { setType(event.target.value as AssetType); setError(null); }}>
+            <select
+              value={type}
+              onChange={(event) => { setType(event.target.value as AssetType); setError(null); }}
+            >
               {assetTypes.map((option) => (
                 <option key={option} value={option}>{option}</option>
               ))}
@@ -237,37 +229,14 @@ export function AddHoldingForm({ onCancel, onSubmit }: AddHoldingFormProps) {
             </>
           )}
 
-          {type === 'Cash' && (
-            <>
-              <label className="form-field">
-                <span>Account name</span>
-                <input
-                  type="text"
-                  value={accountName}
-                  onChange={(event) => setAccountName(event.target.value)}
-                  placeholder="e.g. Cash & sweep"
-                  autoFocus
-                />
-              </label>
-              <label className="form-field">
-                <span>Amount ($)</span>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={amount}
-                  onChange={(event) => setAmount(event.target.value)}
-                  placeholder="5000"
-                />
-              </label>
-            </>
-          )}
-
           {error && <p className="form-error">{error}</p>}
+          </fieldset>
 
           <div className="modal-actions">
-            <button type="button" className="text-button" onClick={onCancel}>Cancel</button>
-            <button type="submit" className="primary-button">Add holding</button>
+            <button type="button" className="text-button" onClick={onCancel} disabled={isSubmitting}>Cancel</button>
+            <button type="submit" className="primary-button" disabled={isSubmitting}>
+              {isSubmitting ? 'Adding…' : 'Add holding'}
+            </button>
           </div>
         </form>
       </div>
