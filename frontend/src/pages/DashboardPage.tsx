@@ -9,6 +9,10 @@ import { getFirstName, useUser } from '../contexts/UserContext';
 import type { AllocationItem, Holding, TimeRange } from '../types/portfolio';
 import { formatAsOf, formatPrice, formatSignedCurrency, formatSignedPercent, getGreeting } from '../utils/formatters';
 
+let cachedHoldings: Holding[] = [];
+let cachedSummary: PortfolioSummary | null = null;
+let cachedAllocations: AllocationItem[] = [];
+
 interface DashboardPageProps {
   onViewHoldings: () => void;
 }
@@ -16,9 +20,9 @@ interface DashboardPageProps {
 export function DashboardPage({ onViewHoldings }: DashboardPageProps) {
   const [range, setRange] = useState<TimeRange>('1M');
   const [now, setNow] = useState(() => new Date());
-  const [holdings, setHoldings] = useState<Holding[]>([]);
-  const [summary, setSummary] = useState<PortfolioSummary | null>(null);
-  const [allocations, setAllocations] = useState<AllocationItem[]>([]);
+  const [holdings, setHoldings] = useState<Holding[]>(cachedHoldings);
+  const [summary, setSummary] = useState<PortfolioSummary | null>(cachedSummary);
+  const [allocations, setAllocations] = useState<AllocationItem[]>(cachedAllocations);
   const livePrices = useLivePrices();
   const { profile } = useUser();
 
@@ -28,9 +32,35 @@ export function DashboardPage({ onViewHoldings }: DashboardPageProps) {
   }, []);
 
   useEffect(() => {
-    fetchHoldings().then(setHoldings);
-    fetchSummary().then(setSummary);
-    fetchAllocation().then(setAllocations);
+    let active = true;
+
+    const loadDashboardData = async () => {
+      try {
+        const [nextHoldings, nextSummary, nextAllocations] = await Promise.all([
+          fetchHoldings(),
+          fetchSummary(),
+          fetchAllocation(),
+        ]);
+
+        if (!active) return;
+
+        cachedHoldings = nextHoldings;
+        cachedSummary = nextSummary;
+        cachedAllocations = nextAllocations;
+
+        setHoldings(nextHoldings);
+        setSummary(nextSummary);
+        setAllocations(nextAllocations);
+      } catch (error) {
+        console.error('Failed to load dashboard data', error);
+      }
+    };
+
+    void loadDashboardData();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   const liveHoldings = useMemo(() => withLiveDailyChange(holdings, livePrices), [holdings, livePrices]);
