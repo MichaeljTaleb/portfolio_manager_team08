@@ -1,11 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { Toast } from '../components/common/Toast';
 import { AddHoldingForm } from '../components/holdings/AddHoldingForm';
 import { HoldingsTable } from '../components/holdings/HoldingsTable';
 import { SellHoldingForm } from '../components/holdings/SellHoldingForm';
 import { buyHolding, fetchHoldings, sellHolding } from '../api/client';
-import { useLivePrices, withLiveDailyChange } from '../contexts/LivePricesContext';
+import { useLivePrices, usePreviousCloses, withLiveDailyChange } from '../contexts/LivePricesContext';
 import type { AssetType, Holding } from '../types/portfolio';
 import { formatCurrency } from '../utils/formatters';
 
@@ -34,12 +33,13 @@ export function HoldingsPage() {
   const [query, setQuery] = useState('');
   const [assetFilter, setAssetFilter] = useState<AssetFilter>('All');
   const [sortBy, setSortBy] = useState<SortOption>('name');
-  const [pendingRemoval, setPendingRemoval] = useState<Holding | null>(null);
+  const [isAddingBuy, setIsAddingBuy] = useState(false);
   const [pendingSale, setPendingSale] = useState<Holding | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastTone, setToastTone] = useState<'neutral' | 'success' | 'error'>('neutral');
   const [lastRemoved, setLastRemoved] = useState<{ holding: Holding; index: number } | null>(null);
   const livePrices = useLivePrices();
+  const previousCloses = usePreviousCloses();
 
   const loadHoldings = async () => {
     const backendHoldings = await fetchHoldings();
@@ -75,21 +75,6 @@ export function HoldingsPage() {
     }
   };
 
-  const handleConfirmRemove = async () => {
-    if (!pendingRemoval) return;
-
-    if (pendingRemoval.type === 'Stocks') {
-      await sellHolding(pendingRemoval.ticker, pendingRemoval.quantity, pendingRemoval.currentPrice);
-      await loadHoldings();
-    } else {
-      const index = holdings.findIndex((holding) => holding.id === pendingRemoval.id);
-      setHoldings((current) => recalculateAllocations(current.filter((holding) => holding.id !== pendingRemoval.id)));
-      setLastRemoved({ holding: pendingRemoval, index });
-    }
-    setToastTone('neutral');
-    setToastMessage(`${pendingRemoval.ticker} removed from holdings.`);
-    setPendingRemoval(null);
-  };
 
   const handleConfirmSale = async (quantity: number) => {
     if (!pendingSale) return;
@@ -140,7 +125,7 @@ export function HoldingsPage() {
   };
 
   const visibleHoldings = useMemo(() => {
-    const liveHoldings = withLiveDailyChange(holdings, livePrices);
+    const liveHoldings = withLiveDailyChange(holdings, livePrices, previousCloses);
     const trimmedQuery = query.trim().toLowerCase();
     const filtered = liveHoldings.filter((holding) => {
       const matchesQuery =
@@ -169,7 +154,7 @@ export function HoldingsPage() {
         sorted.sort((a, b) => a.name.localeCompare(b.name));
     }
     return sorted;
-  }, [holdings, livePrices, query, assetFilter, sortBy]);
+  }, [holdings, livePrices, previousCloses, query, assetFilter, sortBy]);
 
   return (
     <>
@@ -206,24 +191,16 @@ export function HoldingsPage() {
             <option key={option.value} value={option.value}>Sort by: {option.label}</option>
           ))}
         </select>
-        <button type="button" className="primary-button holdings-add-button" onClick={() => setIsAdding(true)}>+ Add holding</button>
+        <button type="button" className="primary-button holdings-add-button" onClick={() => setIsAdding(true)}>+ Buy holdings</button>
       </div>
 
-      <HoldingsTable holdings={visibleHoldings} onRequestSell={setPendingSale} onRequestRemove={setPendingRemoval} />
-      {isAdding && <AddHoldingForm onCancel={() => setIsAdding(false)} onSubmit={handleAddHolding} />}
+      <HoldingsTable holdings={visibleHoldings} onRequestBuy={() => setIsAddingBuy(true)} onRequestSell={setPendingSale} />
+      {(isAdding || isAddingBuy) && <AddHoldingForm onCancel={() => { setIsAdding(false); setIsAddingBuy(false); }} onSubmit={handleAddHolding} />}
       {pendingSale && (
         <SellHoldingForm
           holding={pendingSale}
           onCancel={() => setPendingSale(null)}
           onConfirm={handleConfirmSale}
-        />
-      )}
-      {pendingRemoval && (
-        <ConfirmDialog
-          title="Remove holding"
-          message={`Remove ${pendingRemoval.ticker} — ${pendingRemoval.name} from your holdings?`}
-          onCancel={() => setPendingRemoval(null)}
-          onConfirm={handleConfirmRemove}
         />
       )}
       {toastMessage && (

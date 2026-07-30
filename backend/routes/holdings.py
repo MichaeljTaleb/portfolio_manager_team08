@@ -8,7 +8,14 @@ holdings_bp = Blueprint('holdings', __name__)
 
 # Helper function to build a holding dictionary from a symbol + quantity
 def _build_holding(session, symbol, quantity):
-    latest = session.execute(
+    # Get today's opening price for accurate daily change calculation
+    today_price = session.execute(
+        text("SELECT name, open_price FROM stocks WHERE symbol = :symbol AND price_date = CURDATE()"),
+        {"symbol": symbol},
+    ).mappings().first()
+
+    # Fall back to latest if today's data not available
+    latest = today_price or session.execute(
         text("SELECT name, open_price FROM stocks WHERE symbol = :symbol ORDER BY price_date DESC LIMIT 1"),
         {"symbol": symbol},
     ).mappings().first()

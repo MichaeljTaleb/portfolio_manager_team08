@@ -1,16 +1,18 @@
 import type { Holding } from '../../types/portfolio';
+import { useLivePrices } from '../../contexts/LivePricesContext';
 import { formatCurrency, formatPrice, formatQuantity, formatSignedCurrency, formatSignedPercent } from '../../utils/formatters';
 import { Card } from '../common/Card';
 import { RowActionsMenu } from './RowActionsMenu';
 
 interface HoldingsTableProps {
   holdings: Holding[];
+  onRequestBuy?: (holding: Holding) => void;
   onRequestSell?: (holding: Holding) => void;
-  onRequestRemove?: (holding: Holding) => void;
 }
 
-export function HoldingsTable({ holdings, onRequestSell, onRequestRemove }: HoldingsTableProps) {
-  const showActions = Boolean(onRequestSell || onRequestRemove);
+export function HoldingsTable({ holdings, onRequestBuy, onRequestSell }: HoldingsTableProps) {
+  const showActions = Boolean(onRequestBuy || onRequestSell);
+  const livePrices = useLivePrices();
 
   return (
     <Card className="table-card">
@@ -32,6 +34,7 @@ export function HoldingsTable({ holdings, onRequestSell, onRequestRemove }: Hold
           <tbody>
             {holdings.map((holding) => {
               const isCash = holding.type === 'Cash';
+              const livePrice = livePrices[holding.ticker] ?? holding.currentPrice;
               return (
                 <tr key={holding.id} className="holding-row">
                   <td>
@@ -42,7 +45,7 @@ export function HoldingsTable({ holdings, onRequestSell, onRequestRemove }: Hold
                   </td>
                   <td><span className={`asset-tag ${holding.type.toLowerCase()}`}>{holding.type}</span></td>
                   <td className="numeric">{isCash ? '—' : formatQuantity(holding.quantity)}</td>
-                  <td className="numeric">{isCash ? '—' : formatPrice(holding.currentPrice)}</td>
+                  <td className="numeric">{isCash ? '—' : formatPrice(livePrice)}</td>
                   <td className={`numeric ${holding.dailyChange > 0 ? 'positive' : holding.dailyChange < 0 ? 'negative' : 'muted'}`}>{formatSignedPercent(holding.dailyChange)}</td>
                   <td className={`numeric ${holding.totalGainLoss > 0 ? 'positive' : holding.totalGainLoss < 0 ? 'negative' : 'muted'}`}>
                     {formatSignedCurrency(holding.totalGainLoss)}
@@ -54,8 +57,8 @@ export function HoldingsTable({ holdings, onRequestSell, onRequestRemove }: Hold
                       <RowActionsMenu
                         label={holding.ticker}
                         sellLabel={isCash ? 'Withdraw' : 'Sell'}
+                        onBuy={() => onRequestBuy?.(holding)}
                         onSell={() => onRequestSell?.(holding)}
-                        onRemove={() => onRequestRemove?.(holding)}
                       />
                     </td>
                   )}
