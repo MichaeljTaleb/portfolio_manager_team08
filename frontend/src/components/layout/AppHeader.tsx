@@ -1,9 +1,15 @@
-export type View = 'dashboard' | 'holdings';
+export type View = 'dashboard' | 'holdings' | 'cash';
 
 interface AppHeaderProps {
   activeView: View;
   onChangeView: (view: View) => void;
 }
+
+const navItems: { view: View; label: string }[] = [
+  { view: 'dashboard', label: 'Dashboard' },
+  { view: 'holdings', label: 'Holdings' },
+  { view: 'cash', label: 'Cash & Activity' },
+];
 
 export function AppHeader({ activeView, onChangeView }: AppHeaderProps) {
   return (
@@ -14,7 +20,7 @@ export function AppHeader({ activeView, onChangeView }: AppHeaderProps) {
         </button>
 
         <nav className="primary-nav" aria-label="Primary navigation">
-          {(['dashboard', 'holdings'] as const).map((view) => (
+          {navItems.map(({ view, label }) => (
             <button
               key={view}
               type="button"
@@ -22,7 +28,7 @@ export function AppHeader({ activeView, onChangeView }: AppHeaderProps) {
               aria-current={activeView === view ? 'page' : undefined}
               onClick={() => onChangeView(view)}
             >
-              {view[0].toUpperCase() + view.slice(1)}
+              {label}
             </button>
           ))}
         </nav>

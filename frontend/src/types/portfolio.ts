@@ -29,3 +29,16 @@ export interface PerformanceSeries {
   axis: string[];
   label: string;
 }
+
+export interface Transaction {
+  symbol: string;
+  action: 'BUY' | 'SELL';
+  quantity: number;
+  price: number;
+  executedAt: string;
+}
+
+export interface CashSummary {
+  balance: number;
+  transactions: Transaction[];
+}

@@ -137,7 +137,15 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .asset-tag.stocks { color: #bfdbfe; background: rgba(59, 130, 246, 0.16); }
 .asset-tag.bonds { color: #93c5fd; border: 1px solid rgba(96, 165, 250, 0.45); }
 .asset-tag.cash { color: var(--muted); background: rgba(143, 155, 176, 0.12); }
+.asset-tag.deposit { color: var(--positive); background: var(--positive-soft); }
+.asset-tag.withdraw { color: var(--negative); background: var(--negative-soft); }
 .holding-value { font-weight: 600; }
+.cash-table { min-width: 0; }
+.table-empty { text-align: center; color: var(--muted); padding: 28px 14px !important; }
+
+.cash-balance-card { padding: 20px 22px; margin-bottom: 24px; display: flex; flex-direction: column; gap: 6px; }
+.cash-balance-value { font-size: 34px; font-weight: 700; letter-spacing: -0.02em; }
+.cash-balance-actions { display: flex; align-items: center; gap: 16px; margin-top: 10px; }
 
 .row-action-col { width: 44px; padding-left: 4px !important; padding-right: 14px !important; }
 .row-actions-menu { position: relative; display: inline-block; }
@@ -202,6 +210,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .primary-button:hover { background: var(--accent-soft); }
 .danger-button { border: 1px solid var(--negative); background: transparent; color: var(--negative); padding: 9px 14px; border-radius: var(--radius-md); cursor: pointer; }
 .danger-button:hover { background: var(--negative-soft); }
+.button-sm { padding: 6px 11px; font-size: 12px; }
 .holdings-heading { align-items: center; }
 .holdings-toolbar { display: flex; gap: 12px; margin-bottom: 22px; }
 .holdings-add-button { margin-left: auto; }

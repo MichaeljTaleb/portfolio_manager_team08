@@ -67,6 +67,36 @@ def allocation():
             {'name': 'Cash', 'percentage': round(cash_value / total * 100, 1)},
         ])
 
+@portfolio_bp.route('/cash')
+def cash():
+    with SessionLocal() as session:
+        row = session.execute(
+            text("SELECT cash_balance FROM portfolio_history ORDER BY snapshot_date DESC LIMIT 1")
+        ).mappings().first()
+        balance = float(row['cash_balance']) if row and row['cash_balance'] is not None else 0.0
+
+        transactions = session.execute(
+            text(
+                "SELECT symbol, action, quantity, price, executed_at FROM transactions "
+                "ORDER BY executed_at DESC LIMIT 100"
+            )
+        ).mappings().all()
+
+        return jsonify({
+            'balance': balance,
+            'transactions': [
+                {
+                    'symbol': t['symbol'],
+                    'action': t['action'],
+                    'quantity': float(t['quantity']),
+                    'price': float(t['price']),
+                    'executedAt': t['executed_at'].isoformat(),
+                }
+                for t in transactions
+            ],
+        })
+
+
 @portfolio_bp.route('/performance')
 def performance():
     range_param = request.args.get('range', '1m')
