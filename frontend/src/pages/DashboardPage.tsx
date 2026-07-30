@@ -5,6 +5,7 @@ import { PerformanceChart } from '../components/dashboard/PerformanceChart';
 import { HoldingsTable } from '../components/holdings/HoldingsTable';
 import { fetchAllocation, fetchHoldings, fetchSummary, type PortfolioSummary } from '../api/client';
 import { computeDayGain, useLivePrices, withLiveDailyChange } from '../contexts/LivePricesContext';
+import { getFirstName, useUser } from '../contexts/UserContext';
 import type { AllocationItem, Holding, TimeRange } from '../types/portfolio';
 import { formatAsOf, formatPrice, formatSignedCurrency, formatSignedPercent, getGreeting } from '../utils/formatters';
 
@@ -19,6 +20,7 @@ export function DashboardPage({ onViewHoldings }: DashboardPageProps) {
   const [summary, setSummary] = useState<PortfolioSummary | null>(null);
   const [allocations, setAllocations] = useState<AllocationItem[]>([]);
   const livePrices = useLivePrices();
+  const { profile } = useUser();
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 60_000);
@@ -44,7 +46,7 @@ export function DashboardPage({ onViewHoldings }: DashboardPageProps) {
     <>
       <div className="page-heading">
         <div>
-          <h1>{getGreeting(now)}, Sang</h1>
+          <h1>{getGreeting(now)}, {getFirstName(profile.name)}</h1>
           <div className="page-subline">
             <p>Here&apos;s how your portfolio is doing today</p>
           </div>
