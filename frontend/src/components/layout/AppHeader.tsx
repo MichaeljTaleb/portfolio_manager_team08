@@ -1,4 +1,6 @@
-export type View = 'dashboard' | 'holdings' | 'cash';
+import { getInitials, useUser } from '../../contexts/UserContext';
+
+export type View = 'dashboard' | 'holdings' | 'cash' | 'profile';
 
 interface AppHeaderProps {
   activeView: View;
@@ -12,6 +14,8 @@ const navItems: { view: View; label: string }[] = [
 ];
 
 export function AppHeader({ activeView, onChangeView }: AppHeaderProps) {
+  const { profile } = useUser();
+
   return (
     <>
       <header className="app-header">
@@ -33,7 +37,15 @@ export function AppHeader({ activeView, onChangeView }: AppHeaderProps) {
           ))}
         </nav>
 
-        <div className="avatar" aria-label="User profile">SS</div>
+        <button
+          type="button"
+          className="avatar"
+          aria-label="Edit profile"
+          aria-current={activeView === 'profile' ? 'page' : undefined}
+          onClick={() => onChangeView('profile')}
+        >
+          {getInitials(profile.name)}
+        </button>
       </header>
       <div className="header-rule" />
     </>
