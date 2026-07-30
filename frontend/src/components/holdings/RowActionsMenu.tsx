@@ -3,11 +3,11 @@ import { useEffect, useRef, useState } from 'react';
 interface RowActionsMenuProps {
   label: string;
   sellLabel: string;
+  onBuy: () => void;
   onSell: () => void;
-  onRemove: () => void;
 }
 
-export function RowActionsMenu({ label, sellLabel, onSell, onRemove }: RowActionsMenuProps) {
+export function RowActionsMenu({ label, sellLabel, onBuy, onSell }: RowActionsMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -53,21 +53,21 @@ export function RowActionsMenu({ label, sellLabel, onSell, onRemove }: RowAction
             className="row-actions-item"
             onClick={() => {
               setIsOpen(false);
-              onSell();
+              onBuy();
             }}
           >
-            {sellLabel}
+            Buy
           </button>
           <button
             type="button"
             role="menuitem"
-            className="row-actions-item row-actions-item-danger"
+            className="row-actions-item"
             onClick={() => {
               setIsOpen(false);
-              onRemove();
+              onSell();
             }}
           >
-            Remove
+            {sellLabel}
           </button>
         </div>
       )}

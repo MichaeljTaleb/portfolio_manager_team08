@@ -2,7 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import type { Holding } from '../../types/portfolio';
 import { useLivePrices } from '../../contexts/LivePricesContext';
-import { formatCurrency, formatQuantity } from '../../utils/formatters';
+import { formatCurrency, formatPrice, formatQuantity } from '../../utils/formatters';
 
 interface SellHoldingFormProps {
   holding: Holding;
@@ -67,6 +67,14 @@ export function SellHoldingForm({ holding, onCancel, onConfirm }: SellHoldingFor
           <p className="confirm-message">
             You currently hold {formatQuantity(holding.quantity)} {unitLabel} of {holding.name}
           </p>
+          {!isCash && (
+            <label className="form-field">
+              <span>Sell price</span>
+              <div style={{ padding: '8px', background: 'var(--background-secondary)', borderRadius: '6px', color: 'var(--text-secondary)' }}>
+                {formatPrice(livePrice)}
+              </div>
+            </label>
+          )}
           <label className="form-field">
             <span>{isCash ? 'Amount ($)' : 'Quantity'}</span>
             <input
@@ -82,7 +90,7 @@ export function SellHoldingForm({ holding, onCancel, onConfirm }: SellHoldingFor
             />
           </label>
           {!isCash && quantity && Number(quantity) > 0 && (
-            <p className="confirm-message">Estimated proceeds: {formatCurrency(estimatedProceeds)}</p>
+            <p className="confirm-message">Proceeds: {formatCurrency(estimatedProceeds)}</p>
           )}
           {error && <p className="form-error">{error}</p>}
           <div className="modal-actions">

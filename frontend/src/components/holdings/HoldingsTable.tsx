@@ -5,12 +5,12 @@ import { RowActionsMenu } from './RowActionsMenu';
 
 interface HoldingsTableProps {
   holdings: Holding[];
+  onRequestBuy?: (holding: Holding) => void;
   onRequestSell?: (holding: Holding) => void;
-  onRequestRemove?: (holding: Holding) => void;
 }
 
-export function HoldingsTable({ holdings, onRequestSell, onRequestRemove }: HoldingsTableProps) {
-  const showActions = Boolean(onRequestSell || onRequestRemove);
+export function HoldingsTable({ holdings, onRequestBuy, onRequestSell }: HoldingsTableProps) {
+  const showActions = Boolean(onRequestBuy || onRequestSell);
 
   return (
     <Card className="table-card">
@@ -54,8 +54,8 @@ export function HoldingsTable({ holdings, onRequestSell, onRequestRemove }: Hold
                       <RowActionsMenu
                         label={holding.ticker}
                         sellLabel={isCash ? 'Withdraw' : 'Sell'}
+                        onBuy={() => onRequestBuy?.(holding)}
                         onSell={() => onRequestSell?.(holding)}
-                        onRemove={() => onRequestRemove?.(holding)}
                       />
                     </td>
                   )}
