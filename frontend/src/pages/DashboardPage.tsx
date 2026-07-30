@@ -3,15 +3,16 @@ import { AllocationCard } from '../components/dashboard/AllocationCard';
 import { MetricCard } from '../components/dashboard/MetricCard';
 import { PerformanceChart } from '../components/dashboard/PerformanceChart';
 import { HoldingsTable } from '../components/holdings/HoldingsTable';
-import { fetchAllocation, fetchHoldings, fetchSummary, type PortfolioSummary } from '../api/client';
+import { fetchAllocation, fetchCash, fetchHoldings, fetchSummary, type PortfolioSummary } from '../api/client';
 import { computeDayGain, useLivePrices, withLiveDailyChange } from '../contexts/LivePricesContext';
 import { getFirstName, useUser } from '../contexts/UserContext';
-import type { AllocationItem, Holding, TimeRange } from '../types/portfolio';
+import type { AllocationItem, CashSummary, Holding, TimeRange } from '../types/portfolio';
 import { formatAsOf, formatPrice, formatSignedCurrency, formatSignedPercent, getGreeting } from '../utils/formatters';
 
 let cachedHoldings: Holding[] = [];
 let cachedSummary: PortfolioSummary | null = null;
 let cachedAllocations: AllocationItem[] = [];
+let cachedCash: CashSummary | null = null;
 
 interface DashboardPageProps {
   onViewHoldings: () => void;
@@ -23,6 +24,7 @@ export function DashboardPage({ onViewHoldings }: DashboardPageProps) {
   const [holdings, setHoldings] = useState<Holding[]>(cachedHoldings);
   const [summary, setSummary] = useState<PortfolioSummary | null>(cachedSummary);
   const [allocations, setAllocations] = useState<AllocationItem[]>(cachedAllocations);
+  const [cashSummary, setCashSummary] = useState<CashSummary | null>(cachedCash);
   const livePrices = useLivePrices();
   const { profile } = useUser();
 
@@ -36,10 +38,11 @@ export function DashboardPage({ onViewHoldings }: DashboardPageProps) {
 
     const loadDashboardData = async () => {
       try {
-        const [nextHoldings, nextSummary, nextAllocations] = await Promise.all([
+        const [nextHoldings, nextSummary, nextAllocations, nextCash] = await Promise.all([
           fetchHoldings(),
           fetchSummary(),
           fetchAllocation(),
+          fetchCash(),
         ]);
 
         if (!active) return;
@@ -47,10 +50,12 @@ export function DashboardPage({ onViewHoldings }: DashboardPageProps) {
         cachedHoldings = nextHoldings;
         cachedSummary = nextSummary;
         cachedAllocations = nextAllocations;
+        cachedCash = nextCash;
 
         setHoldings(nextHoldings);
         setSummary(nextSummary);
         setAllocations(nextAllocations);
+        setCashSummary(nextCash);
       } catch (error) {
         console.error('Failed to load dashboard data', error);
       }
@@ -69,8 +74,7 @@ export function DashboardPage({ onViewHoldings }: DashboardPageProps) {
     [liveHoldings, summary],
   );
   const liveTotalValue = (summary?.totalValue ?? 0) + dayGain;
-  const cashPercentage = allocations.find((item) => item.name === 'Cash')?.percentage ?? 0;
-  const cashValue = ((summary?.totalValue ?? 0) * cashPercentage) / 100;
+  const cashValue = cashSummary?.balance ?? 0;
 
   return (
     <>

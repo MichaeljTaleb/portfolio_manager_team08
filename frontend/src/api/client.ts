@@ -113,3 +113,27 @@ export async function fetchCash(): Promise<CashSummary> {
   const response = await fetch(`${BASE_URL}/api/portfolio/cash`);
   return response.json();
 }
+
+export async function depositCash(amount: number): Promise<void> {
+  const response = await fetch(`${BASE_URL}/api/portfolio/cash/deposit`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ amount }),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new Error(body?.error ?? 'Failed to deposit cash.');
+  }
+}
+
+export async function withdrawCash(amount: number): Promise<void> {
+  const response = await fetch(`${BASE_URL}/api/portfolio/cash/withdraw`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ amount }),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new Error(body?.error ?? 'Failed to withdraw cash.');
+  }
+}

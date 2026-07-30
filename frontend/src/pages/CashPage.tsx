@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { fetchCash } from '../api/client';
+import { fetchCash, depositCash, withdrawCash } from '../api/client';
 import { CashTransferForm } from '../components/cash/CashTransferForm';
 import { Card } from '../components/common/Card';
 import { Toast } from '../components/common/Toast';
@@ -24,24 +24,22 @@ export function CashPage() {
     fetchCash().then(setSummary);
   }, []);
 
-  const handleConfirmTransfer = (amount: number) => {
+  const handleConfirmTransfer = async (amount: number) => {
     const isDeposit = transferMode === 'deposit';
-    setSummary((current) => ({
-      balance: isDeposit ? current.balance + amount : current.balance - amount,
-      transactions: [
-        {
-          symbol: 'CASH',
-          action: isDeposit ? 'BUY' : 'SELL',
-          quantity: amount,
-          price: 1,
-          executedAt: new Date().toISOString(),
-        },
-        ...current.transactions,
-      ],
-    }));
-    setToastMessage(isDeposit ? `${formatPrice(amount)} deposited.` : `${formatPrice(amount)} withdrawn.`);
-    setTransferMode(null);
-    setPage(0);
+    try {
+      if (isDeposit) {
+        await depositCash(amount);
+      } else {
+        await withdrawCash(amount);
+      }
+      const updated = await fetchCash();
+      setSummary(updated);
+      setToastMessage(isDeposit ? `${formatPrice(amount)} deposited.` : `${formatPrice(amount)} withdrawn.`);
+      setTransferMode(null);
+      setPage(0);
+    } catch (error) {
+      setToastMessage(error instanceof Error ? error.message : 'Failed to process transfer.');
+    }
   };
 
   const filteredTransactions = useMemo(() => {
