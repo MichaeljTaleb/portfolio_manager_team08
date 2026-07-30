@@ -142,6 +142,9 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .holding-value { font-weight: 600; }
 .cash-table { min-width: 0; }
 .table-empty { text-align: center; color: var(--muted); padding: 28px 14px !important; }
+.table-pagination { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-top: 1px solid rgba(143, 155, 176, 0.14); color: var(--muted); font-size: 12px; }
+.table-pagination-controls { display: flex; gap: 4px; }
+.table-pagination-controls .text-button:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .cash-balance-card { padding: 20px 22px; margin-bottom: 24px; display: flex; flex-direction: column; gap: 6px; }
 .cash-balance-value { font-size: 34px; font-weight: 700; letter-spacing: -0.02em; }
