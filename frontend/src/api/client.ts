@@ -114,26 +114,14 @@ export async function fetchCash(): Promise<CashSummary> {
   return response.json();
 }
 
-export async function depositCash(amount: number): Promise<void> {
-  const response = await fetch(`${BASE_URL}/api/portfolio/cash/deposit`, {
+export async function executeCashTransfer(action: 'DEPOSIT' | 'WITHDRAW', amount: number): Promise<void> {
+  const response = await fetch(`${BASE_URL}/api/portfolio/cash/transfer`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ amount }),
+    body: JSON.stringify({ action, amount }),
   });
   if (!response.ok) {
     const body = await response.json().catch(() => null);
-    throw new Error(body?.error ?? 'Failed to deposit cash.');
-  }
-}
-
-export async function withdrawCash(amount: number): Promise<void> {
-  const response = await fetch(`${BASE_URL}/api/portfolio/cash/withdraw`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ amount }),
-  });
-  if (!response.ok) {
-    const body = await response.json().catch(() => null);
-    throw new Error(body?.error ?? 'Failed to withdraw cash.');
+    throw new Error(body?.error ?? 'Failed to execute cash transfer.');
   }
 }
