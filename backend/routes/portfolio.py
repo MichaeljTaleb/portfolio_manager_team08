@@ -97,22 +97,32 @@ def cash():
         })
 
 
-@portfolio_bp.route('/cash/deposit', methods=['POST'])
-def deposit_cash():
-    data = request.get_json()
-    amount = float(data.get('amount', 0))
 
-    if amount <= 0:
-        return jsonify({'error': 'amount must be greater than 0'}), 400
+@portfolio_bp.route('/cash/transfer', methods=['POST'])
+def transfer_cash():
+    data = request.get_json() or {}
+    action = data.get('action')
+    try:
+        amount = float(data.get('amount', 0))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'invalid amount'}), 400
+
+    if amount <= 0 or action not in ['DEPOSIT', 'WITHDRAW']:
+        return jsonify({'error': 'invalid request'}), 400
 
     with SessionLocal() as session:
-        current_balance = session.execute(
+        current_balance_row = session.execute(
             text("SELECT quantity FROM user_assets WHERE symbol = 'CASH'")
         ).mappings().first()
-        current = float(current_balance['quantity']) if current_balance else 0.0
-        new_cash = current + amount
+        current_cash = float(current_balance_row['quantity']) if current_balance_row else 0.0
 
-        # Calculate holdings value
+        if action == 'WITHDRAW' and amount > current_cash:
+            return jsonify({'error': 'insufficient cash balance'}), 400
+
+        cash_delta = amount if action == 'DEPOSIT' else -amount
+        new_cash = current_cash + cash_delta
+
+        # Calculate current equity holdings value for snapshot synchronization
         assets = session.execute(
             text("SELECT symbol, quantity FROM user_assets WHERE symbol != 'CASH'")
         ).mappings().all()
@@ -125,20 +135,30 @@ def deposit_cash():
             if price_row:
                 holdings_value += float(asset['quantity']) * float(price_row['open_price'])
 
+        # Update cash quantity in user_assets
         session.execute(
             text(
                 """
                 INSERT INTO user_assets (symbol, quantity, avg_cost_basis)
-                VALUES ('CASH', :amount, 1)
-                ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)
+                VALUES ('CASH', :new_cash, 1)
+                ON DUPLICATE KEY UPDATE quantity = :new_cash
                 """
             ),
-            {"amount": amount},
+            {"new_cash": new_cash},
         )
+
+        # Record transaction ledger entry
         session.execute(
-            text("INSERT INTO transactions (symbol, action, quantity, price) VALUES ('CASH', 'BUY', :amount, 1)"),
-            {"amount": amount},
+            text(
+                """
+                INSERT INTO transactions (symbol, action, quantity, price)
+                VALUES ('CASH', :action, :quantity, 1)
+                """
+            ),
+            {"action": action, "quantity": amount},
         )
+
+        # Synchronize daily snapshot in portfolio_history
         session.execute(
             text(
                 """
@@ -149,64 +169,15 @@ def deposit_cash():
             ),
             {"total_value": holdings_value + new_cash, "cash_balance": new_cash},
         )
+
         session.commit()
 
-    return jsonify({'status': 'success', 'amount': amount}), 201
-
-
-@portfolio_bp.route('/cash/withdraw', methods=['POST'])
-def withdraw_cash():
-    data = request.get_json()
-    amount = float(data.get('amount', 0))
-
-    if amount <= 0:
-        return jsonify({'error': 'amount must be greater than 0'}), 400
-
-    with SessionLocal() as session:
-        current_balance = session.execute(
-            text("SELECT quantity FROM user_assets WHERE symbol = 'CASH'")
-        ).mappings().first()
-        current = float(current_balance['quantity']) if current_balance else 0.0
-
-        if current < amount:
-            return jsonify({'error': f'insufficient cash. balance: {current}'}), 400
-
-        new_cash = current - amount
-
-        # Calculate holdings value
-        assets = session.execute(
-            text("SELECT symbol, quantity FROM user_assets WHERE symbol != 'CASH'")
-        ).mappings().all()
-        holdings_value = 0.0
-        for asset in assets:
-            price_row = session.execute(
-                text("SELECT open_price FROM stocks WHERE symbol = :symbol ORDER BY price_date DESC LIMIT 1"),
-                {"symbol": asset['symbol']},
-            ).mappings().first()
-            if price_row:
-                holdings_value += float(asset['quantity']) * float(price_row['open_price'])
-
-        session.execute(
-            text("UPDATE user_assets SET quantity = quantity - :amount WHERE symbol = 'CASH'"),
-            {"amount": amount},
-        )
-        session.execute(
-            text("INSERT INTO transactions (symbol, action, quantity, price) VALUES ('CASH', 'SELL', :amount, 1)"),
-            {"amount": amount},
-        )
-        session.execute(
-            text(
-                """
-                INSERT INTO portfolio_history (snapshot_date, total_value, cash_balance)
-                VALUES (CURDATE(), :total_value, :cash_balance)
-                ON DUPLICATE KEY UPDATE total_value = VALUES(total_value), cash_balance = VALUES(cash_balance)
-                """
-            ),
-            {"total_value": holdings_value + new_cash, "cash_balance": new_cash},
-        )
-        session.commit()
-
-    return jsonify({'status': 'success', 'amount': amount}), 201
+        return jsonify({
+            'status': 'success',
+            'action': action,
+            'amount': amount,
+            'newCashBalance': new_cash
+        }), 200
 
 
 @portfolio_bp.route('/performance')
