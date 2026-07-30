@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { fetchCash } from '../api/client';
+import { fetchCash, executeCashTransfer } from '../api/client';
 import { CashTransferForm } from '../components/cash/CashTransferForm';
 import { Card } from '../components/common/Card';
 import { Toast } from '../components/common/Toast';
@@ -24,33 +24,45 @@ export function CashPage() {
     fetchCash().then(setSummary);
   }, []);
 
-  const handleConfirmTransfer = (amount: number) => {
+  const handleConfirmTransfer = async (amount: number) => {
     const isDeposit = transferMode === 'deposit';
-    setSummary((current) => ({
-      balance: isDeposit ? current.balance + amount : current.balance - amount,
-      transactions: [
-        {
-          symbol: 'CASH',
-          action: isDeposit ? 'BUY' : 'SELL',
-          quantity: amount,
-          price: 1,
-          executedAt: new Date().toISOString(),
-        },
-        ...current.transactions,
-      ],
-    }));
-    setToastMessage(isDeposit ? `${formatPrice(amount)} deposited.` : `${formatPrice(amount)} withdrawn.`);
-    setTransferMode(null);
-    setPage(0);
+    const action = isDeposit ? 'DEPOSIT' : 'WITHDRAW';
+
+    try{
+      await executeCashTransfer(action, amount);
+
+      const updatedSummary = await fetchCash();
+      setSummary(updatedSummary);
+
+      setToastMessage(isDeposit ? `${formatPrice(amount)} deposited.` : `${formatPrice(amount)} withdrawn.`);
+    } catch (error) {
+      console.error('Error executing cash transfer:', error);
+      setToastMessage('An error occurred while processing the transfer.');
+    } finally {
+      setTransferMode(null);
+      setPage(0);
+    }
+  };
+
+  const getActionDetails = (action: string) => {
+    switch (action.toUpperCase()) {
+      case 'DEPOSIT':
+        return { label: 'Deposit', tagClass: 'deposit', isCashTransfer: true };
+      case 'WITHDRAW':
+        return { label: 'Withdraw', tagClass: 'withdraw', isCashTransfer: true };
+      case 'BUY':
+        return { label: 'Buy', tagClass: 'stocks', isCashTransfer: false };
+      case 'SELL':
+        return { label: 'Sell', tagClass: 'cash', isCashTransfer: false };
+      default:
+        return { label: action, tagClass: 'neutral', isCashTransfer: false };
+    }
   };
 
   const filteredTransactions = useMemo(() => {
     const trimmedQuery = query.trim().toLowerCase();
     return summary.transactions.filter((transaction) => {
-      const isCashTransfer = transaction.symbol === 'CASH';
-      const isBuy = transaction.action === 'BUY';
-      const label = isCashTransfer ? (isBuy ? 'Deposit' : 'Withdraw') : (isBuy ? 'Buy' : 'Sell');
-
+      const { label } = getActionDetails(transaction.action);
       const matchesQuery = trimmedQuery === '' || transaction.symbol.toLowerCase().includes(trimmedQuery);
       const matchesFilter = actionFilter === 'All' || label === actionFilter;
       return matchesQuery && matchesFilter;
@@ -112,10 +124,7 @@ export function CashPage() {
             </thead>
             <tbody>
               {visibleTransactions.map((transaction, index) => {
-                const isCashTransfer = transaction.symbol === 'CASH';
-                const isBuy = transaction.action === 'BUY';
-                const label = isCashTransfer ? (isBuy ? 'Deposit' : 'Withdraw') : (isBuy ? 'Buy' : 'Sell');
-                const tagClass = isCashTransfer ? (isBuy ? 'deposit' : 'withdraw') : (isBuy ? 'stocks' : 'cash');
+                const { label, tagClass, isCashTransfer } = getActionDetails(transaction.action);
                 return (
                   <tr key={`${transaction.symbol}-${transaction.executedAt}-${index}`} className="holding-row">
                     <td>{formatDateTime(transaction.executedAt)}</td>
@@ -123,8 +132,8 @@ export function CashPage() {
                     <td>
                       <span className={`asset-tag ${tagClass}`}>{label}</span>
                     </td>
-                    <td className="numeric">{isCashTransfer ? '—' : formatQuantity(transaction.quantity)}</td>
-                    <td className="numeric">{isCashTransfer ? '—' : formatPrice(transaction.price)}</td>
+                    <td className="numeric">{formatQuantity(transaction.quantity)}</td>
+                    <td className="numeric">{formatPrice(transaction.price)}</td>
                     <td className="numeric holding-value">
                       {isCashTransfer ? formatPrice(transaction.quantity) : formatPrice(transaction.quantity * transaction.price)}
                     </td>

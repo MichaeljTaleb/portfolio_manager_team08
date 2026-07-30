@@ -113,3 +113,15 @@ export async function fetchCash(): Promise<CashSummary> {
   const response = await fetch(`${BASE_URL}/api/portfolio/cash`);
   return response.json();
 }
+
+export async function executeCashTransfer(action: 'DEPOSIT' | 'WITHDRAW', amount: number): Promise<void> {
+  const response = await fetch(`${BASE_URL}/api/holdings/cash`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, amount }),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new Error(body?.error ?? 'Failed to execute cash transfer.');
+  }
+}
