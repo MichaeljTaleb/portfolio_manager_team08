@@ -9,6 +9,7 @@ interface ApiHolding {
   currentPrice: number;
   value: number;
   allocation: number;
+  totalGainLoss: number;
 }
 
 export async function fetchHoldings(): Promise<Holding[]> {
@@ -26,8 +27,7 @@ export async function fetchHoldings(): Promise<Holding[]> {
     type: 'Stocks',
     quantity: holding.quantity,
     currentPrice: holding.currentPrice,
-    // TODO: needs cost-basis tracking to compute a real gain/loss.
-    totalGainLoss: 0,
+    totalGainLoss: holding.totalGainLoss,
   }));
 }
 

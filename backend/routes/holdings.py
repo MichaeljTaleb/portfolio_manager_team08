@@ -13,9 +13,16 @@ def _build_holding(session, symbol, quantity):
         {"symbol": symbol},
     ).mappings().first()
 
+    asset = session.execute(
+        text("SELECT avg_cost_basis FROM user_assets WHERE symbol = :symbol"),
+        {"symbol": symbol},
+    ).mappings().first()
+
     quantity = float(quantity)
     latest_price = float(latest['open_price']) if latest else 0.0
+    avg_cost_basis = float(asset['avg_cost_basis']) if asset else 0.0
     value = round(quantity * latest_price, 2)
+    total_gain_loss = round(quantity * (latest_price - avg_cost_basis), 2)
 
     return {
         'ticker': symbol,
@@ -23,6 +30,7 @@ def _build_holding(session, symbol, quantity):
         'quantity': quantity,
         'currentPrice': latest_price,
         'value': value,
+        'totalGainLoss': total_gain_loss,
     }
 
 
