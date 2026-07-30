@@ -29,6 +29,8 @@ class AssetType(str, Enum):
 class TransactionAction(str, Enum):
     BUY = "BUY"
     SELL = "SELL"
+    DEPOSIT = "DEPOSIT"
+    WITHDRAW = "WITHDRAW"
 
 
 class Stock(Base):
