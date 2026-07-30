@@ -115,7 +115,7 @@ export async function fetchCash(): Promise<CashSummary> {
 }
 
 export async function executeCashTransfer(action: 'DEPOSIT' | 'WITHDRAW', amount: number): Promise<void> {
-  const response = await fetch(`${BASE_URL}/api/holdings/cash`, {
+  const response = await fetch(`${BASE_URL}/api/portfolio/cash/transfer`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action, amount }),
