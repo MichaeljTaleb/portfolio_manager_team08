@@ -80,6 +80,12 @@ export function DashboardPage({ onViewHoldings }: DashboardPageProps) {
   const liveTotalValue = (summary?.totalValue ?? 0) + dayGain;
   const cashValue = cashSummary?.balance ?? 0;
 
+  const totalGainLoss = useMemo(
+    () => liveHoldings.reduce((sum, holding) => sum + holding.totalGainLoss, 0),
+    [liveHoldings],
+  );
+  const totalGainLossPercent = liveTotalValue ? (totalGainLoss / liveTotalValue) * 100 : 0;
+
   return (
     <>
       <div className="page-heading">
@@ -97,7 +103,7 @@ export function DashboardPage({ onViewHoldings }: DashboardPageProps) {
         <div className="dashboard-rail">
           <div className="metric-grid">
             <MetricCard label="Today's change" value={formatSignedCurrency(dayGain)} detail={`${formatSignedPercent(dayGainPercent)} today`} tone={dayGain < 0 ? 'negative' : 'positive'} />
-            <MetricCard label="Total return" value={formatSignedCurrency((summary?.totalReturn ?? 0) + dayGain)} detail={`${formatSignedPercent((summary?.totalReturnPercent ?? 0) + dayGainPercent)} all time`} tone={((summary?.totalReturn ?? 0) + dayGain) < 0 ? 'negative' : 'positive'} />
+            <MetricCard label="Total return" value={formatSignedCurrency(totalGainLoss)} detail={`${formatSignedPercent(totalGainLossPercent)} all time`} tone={totalGainLoss < 0 ? 'negative' : 'positive'} />
           </div>
           <MetricCard label="Cash Balance" value={formatPrice(cashValue)} tone="neutral" />
           <AllocationCard />
