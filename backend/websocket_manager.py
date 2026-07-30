@@ -7,6 +7,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Dict, List, Any
 
+import yfinance as yf
 from flask import Flask
 from flask_sock import Sock
 from sqlalchemy import func
@@ -87,7 +88,7 @@ class PriceSimulator:
         finally:
             db.close()
 
-    def start(self, interval_seconds: float = 2.0):
+    def start(self, interval_seconds: float = 10.0):
         if self.is_running:
             return
 
@@ -97,14 +98,34 @@ class PriceSimulator:
         # Launch non-blocking daemon thread
         self._thread = threading.Thread(target=self._run_loop, args=(interval_seconds,), daemon=True)
         self._thread.start()
-        logger.info("🚀 Flask Real-Time Price Simulator thread started.")
+        logger.info("🚀 Live price feed thread started.")
+
+    def _fetch_live_prices(self, symbols: List[str]) -> Dict[str, Dict[str, Decimal]]:
+        quotes: Dict[str, Dict[str, Decimal]] = {}
+        try:
+            tickers_obj = yf.Tickers(" ".join(symbols))
+            for symbol in symbols:
+                try:
+                    fast_info = tickers_obj.tickers[symbol].fast_info
+                    last_price = fast_info["last_price"]
+                    previous_close = fast_info["previous_close"]
+                    if last_price is not None and previous_close is not None:
+                        quotes[symbol] = {
+                            "price": Decimal(str(round(float(last_price), 2))),
+                            "previous_close": Decimal(str(round(float(previous_close), 2))),
+                        }
+                except Exception as e:
+                    logger.warning(f"Could not fetch live price for {symbol}: {e}")
+        except Exception as e:
+            logger.error(f"Error fetching live prices from yfinance: {e}")
+        return quotes
 
     def _run_loop(self, interval_seconds: float):
         while self.is_running:
             try:
                 time.sleep(interval_seconds)
 
-                # Skip wiggling if no clients are connected
+                # Skip fetching if no clients are connected
                 if not self.connection_manager.active_connections:
                     continue
 
@@ -113,26 +134,30 @@ class PriceSimulator:
                     if not self.tickers:
                         continue
 
-                # Pick 2 to 4 random stocks per tick
+                # Pick 2 to 4 random stocks per tick to spread out API calls
                 k_sample = min(random.randint(2, 4), len(self.tickers))
                 selected_symbols = random.sample(self.tickers, k=k_sample)
+
+                live_quotes = self._fetch_live_prices(selected_symbols)
                 tick_updates = []
 
-                for symbol in selected_symbols:
-                    current_price = self.latest_prices.get(symbol, Decimal("100.00"))
-                    
-                    # Calculate percentage change (-0.5% to +0.5%)
-                    percentage_change = Decimal(str(round(random.uniform(-0.005, 0.005), 6)))
-                    new_price = round(current_price * (Decimal("1") + percentage_change), 2)
+                for symbol, quote in live_quotes.items():
+                    new_price = quote["price"]
+                    previous_close = quote["previous_close"]
+                    previous_price = self.latest_prices.get(symbol, new_price)
+                    price_delta = round(new_price - previous_price, 2)
+                    # Daily change is measured against the prior session's close,
+                    # matching how real market data / finance sites report it.
+                    day_change_percent = round(float((new_price - previous_close) / previous_close) * 100, 2) if previous_close else 0.0
 
                     self.latest_prices[symbol] = new_price
-                    price_delta = round(new_price - current_price, 2)
 
                     tick_updates.append({
                         "symbol": symbol,
                         "price": str(new_price),
+                        "previous_close": str(previous_close),
                         "change": str(price_delta),
-                        "change_percent": str(round(float(percentage_change) * 100, 2)),
+                        "change_percent": str(day_change_percent),
                         "direction": "UP" if price_delta >= 0 else "DOWN"
                     })
 
@@ -146,7 +171,7 @@ class PriceSimulator:
                     logger.debug(f"Broadcasted tick: {payload}")
 
             except Exception as e:
-                logger.error(f"Error in price simulator thread: {e}")
+                logger.error(f"Error in price feed thread: {e}")
 
     def stop_simulation(self):
         self.is_running = False
@@ -173,4 +198,4 @@ def register_websocket_routes(app: Flask):
         finally:
             manager.disconnect(ws)
 
-    simulator.start(interval_seconds=2.0)
+    simulator.start(interval_seconds=10.0)

@@ -4,7 +4,7 @@ import { MetricCard } from '../components/dashboard/MetricCard';
 import { PerformanceChart } from '../components/dashboard/PerformanceChart';
 import { HoldingsTable } from '../components/holdings/HoldingsTable';
 import { fetchAllocation, fetchCash, fetchHoldings, fetchSummary, type PortfolioSummary } from '../api/client';
-import { computeDayGain, useLivePrices, withLiveDailyChange } from '../contexts/LivePricesContext';
+import { computeDayGain, usePreviousCloses, useLivePrices, withLiveDailyChange } from '../contexts/LivePricesContext';
 import { getFirstName, useUser } from '../contexts/UserContext';
 import type { AllocationItem, CashSummary, Holding, TimeRange } from '../types/portfolio';
 import { formatAsOf, formatPrice, formatSignedCurrency, formatSignedPercent, getGreeting } from '../utils/formatters';
@@ -26,6 +26,7 @@ export function DashboardPage({ onViewHoldings }: DashboardPageProps) {
   const [allocations, setAllocations] = useState<AllocationItem[]>(cachedAllocations);
   const [cashSummary, setCashSummary] = useState<CashSummary | null>(cachedCash);
   const livePrices = useLivePrices();
+  const previousCloses = usePreviousCloses();
   const { profile } = useUser();
 
   useEffect(() => {
@@ -68,7 +69,10 @@ export function DashboardPage({ onViewHoldings }: DashboardPageProps) {
     };
   }, []);
 
-  const liveHoldings = useMemo(() => withLiveDailyChange(holdings, livePrices), [holdings, livePrices]);
+  const liveHoldings = useMemo(
+    () => withLiveDailyChange(holdings, livePrices, previousCloses),
+    [holdings, livePrices, previousCloses],
+  );
   const { dayGain, dayGainPercent } = useMemo(
     () => computeDayGain(liveHoldings, summary?.totalValue ?? 0),
     [liveHoldings, summary],
