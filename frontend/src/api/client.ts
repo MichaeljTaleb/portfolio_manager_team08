@@ -1,4 +1,4 @@
-import type { AllocationItem, CashSummary, Holding, PerformanceSeries, StockRange, TimeRange } from '../types/portfolio';
+import type { AllocationItem, AssetType, CashSummary, Holding, PerformanceSeries, StockRange, TimeRange } from '../types/portfolio';
 
 const BASE_URL = 'http://127.0.0.1:5001';
 
