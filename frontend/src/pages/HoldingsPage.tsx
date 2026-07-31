@@ -33,6 +33,7 @@ interface HoldingsPageProps {
 
 export function HoldingsPage({ onSelectStock }: HoldingsPageProps) {
   const [holdings, setHoldings] = useState<Holding[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [query, setQuery] = useState('');
   const [assetFilter, setAssetFilter] = useState<AssetFilter>('All');
@@ -46,11 +47,16 @@ export function HoldingsPage({ onSelectStock }: HoldingsPageProps) {
   const previousCloses = usePreviousCloses();
 
   const loadHoldings = async () => {
-    const backendHoldings = await fetchHoldings();
-    setHoldings((current) => {
-      const localOnly = current.filter((holding) => holding.type !== 'Stocks');
-      return recalculateAllocations([...backendHoldings, ...localOnly]);
-    });
+    setIsLoading(true);
+    try {
+      const backendHoldings = await fetchHoldings();
+      setHoldings((current) => {
+        const localOnly = current.filter((holding) => holding.type !== 'Stocks');
+        return recalculateAllocations([...backendHoldings, ...localOnly]);
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -134,8 +140,8 @@ export function HoldingsPage({ onSelectStock }: HoldingsPageProps) {
     const filtered = liveHoldings.filter((holding) => {
       const matchesQuery =
         trimmedQuery === '' ||
-        holding.ticker.toLowerCase().includes(trimmedQuery) ||
-        holding.name.toLowerCase().includes(trimmedQuery);
+        holding.ticker.toLowerCase().startsWith(trimmedQuery) ||
+        holding.name.toLowerCase().startsWith(trimmedQuery);
       const matchesType = assetFilter === 'All' || holding.type === assetFilter;
       return matchesQuery && matchesType;
     });
@@ -166,7 +172,14 @@ export function HoldingsPage({ onSelectStock }: HoldingsPageProps) {
         <div><h1>Holdings</h1><p>{holdings.length} positions across stocks and bonds</p></div>
       </div>
 
-      <div className="holdings-toolbar">
+      {isLoading ? (
+        <div className="page-loading" role="status" aria-live="polite">
+          <span className="loading-animation" aria-hidden="true" />
+          <span>Loading</span>
+        </div>
+      ) : (
+        <>
+          <div className="holdings-toolbar">
         <input
           type="search"
           className="search-input"
@@ -196,14 +209,16 @@ export function HoldingsPage({ onSelectStock }: HoldingsPageProps) {
           ))}
         </select>
         <button type="button" className="primary-button holdings-add-button" onClick={() => setIsAdding(true)}>+ Buy holdings</button>
-      </div>
+          </div>
 
-      <HoldingsTable
-        holdings={visibleHoldings}
-        onRequestBuy={() => setIsAddingBuy(true)}
-        onRequestSell={setPendingSale}
-        onSelectStock={onSelectStock}
-      />
+          <HoldingsTable
+            holdings={visibleHoldings}
+            onRequestBuy={() => setIsAddingBuy(true)}
+            onRequestSell={setPendingSale}
+            onSelectStock={onSelectStock}
+          />
+        </>
+      )}
       {(isAdding || isAddingBuy) && <AddHoldingForm onCancel={() => { setIsAdding(false); setIsAddingBuy(false); }} onSubmit={handleAddHolding} />}
       {pendingSale && (
         <SellHoldingForm

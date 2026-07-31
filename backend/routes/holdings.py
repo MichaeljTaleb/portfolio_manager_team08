@@ -66,6 +66,21 @@ def _set_cash_balance(session, new_cash):
         {"amount": new_cash},
     )
 
+# Route to list all known stock symbols + names, for ticker autocomplete
+@holdings_bp.route('/symbols')
+def list_symbols():
+    with SessionLocal() as session:
+        rows = session.execute(
+            text(
+                """
+                SELECT symbol, name FROM stocks s
+                WHERE price_date = (SELECT MAX(price_date) FROM stocks WHERE symbol = s.symbol)
+                ORDER BY symbol
+                """
+            )
+        ).mappings().all()
+        return jsonify([{'symbol': r['symbol'], 'name': r['name']} for r in rows])
+
 # Route to list all holdings with their allocations
 @holdings_bp.route('/')
 def list_holdings():

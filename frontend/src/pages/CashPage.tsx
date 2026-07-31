@@ -14,6 +14,7 @@ const transactionFilters: TransactionFilter[] = ['All', 'Buy', 'Sell', 'Deposit'
 
 export function CashPage() {
   const [summary, setSummary] = useState<CashSummary>(emptySummary);
+  const [isLoading, setIsLoading] = useState(true);
   const [transferMode, setTransferMode] = useState<'deposit' | 'withdraw' | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [page, setPage] = useState(0);
@@ -21,7 +22,15 @@ export function CashPage() {
   const [actionFilter, setActionFilter] = useState<TransactionFilter>('All');
 
   useEffect(() => {
-    fetchCash().then(setSummary);
+    const loadCash = async () => {
+      try {
+        setSummary(await fetchCash());
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void loadCash();
   }, []);
 
   const handleConfirmTransfer = async (amount: number) => {
@@ -72,6 +81,15 @@ export function CashPage() {
   const pageCount = Math.max(1, Math.ceil(filteredTransactions.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount - 1);
   const visibleTransactions = filteredTransactions.slice(currentPage * PAGE_SIZE, currentPage * PAGE_SIZE + PAGE_SIZE);
+
+  if (isLoading) {
+    return (
+      <div className="page-loading" role="status" aria-live="polite">
+        <span className="loading-animation" aria-hidden="true" />
+        <span>Loading</span>
+      </div>
+    );
+  }
 
   return (
     <>

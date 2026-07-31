@@ -31,21 +31,14 @@ export async function fetchHoldings(): Promise<Holding[]> {
   }));
 }
 
-export async function fetchHoldingDetail(ticker: string): Promise<Holding> {
-  const response = await fetch(`${BASE_URL}/api/holdings/${ticker}`);
-  const holding: ApiHolding = await response.json();
-  return {
-    id: holding.ticker,
-    ticker: holding.ticker,
-    name: holding.name,
-    value: holding.value,
-    allocation: holding.allocation,
-    dailyChange: 0,
-    type: 'Stocks',
-    quantity: holding.quantity,
-    currentPrice: holding.currentPrice,
-    totalGainLoss: holding.totalGainLoss,
-  };
+export interface StockSymbol {
+  symbol: string;
+  name: string;
+}
+
+export async function fetchSymbols(): Promise<StockSymbol[]> {
+  const response = await fetch(`${BASE_URL}/api/holdings/symbols`);
+  return response.json();
 }
 
 export interface PortfolioSummary {
