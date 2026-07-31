@@ -1,4 +1,4 @@
-import type { AllocationItem, CashSummary, Holding, PerformanceSeries, TimeRange } from '../types/portfolio';
+import type { AllocationItem, CashSummary, Holding, PerformanceSeries, StockRange, TimeRange } from '../types/portfolio';
 
 const BASE_URL = 'http://127.0.0.1:5001';
 
@@ -29,6 +29,23 @@ export async function fetchHoldings(): Promise<Holding[]> {
     currentPrice: holding.currentPrice,
     totalGainLoss: holding.totalGainLoss,
   }));
+}
+
+export async function fetchHoldingDetail(ticker: string): Promise<Holding> {
+  const response = await fetch(`${BASE_URL}/api/holdings/${ticker}`);
+  const holding: ApiHolding = await response.json();
+  return {
+    id: holding.ticker,
+    ticker: holding.ticker,
+    name: holding.name,
+    value: holding.value,
+    allocation: holding.allocation,
+    dailyChange: 0,
+    type: 'Stocks',
+    quantity: holding.quantity,
+    currentPrice: holding.currentPrice,
+    totalGainLoss: holding.totalGainLoss,
+  };
 }
 
 export interface PortfolioSummary {
@@ -86,6 +103,25 @@ export async function fetchPerformance(range: TimeRange): Promise<PerformanceSer
     dates: data.axis,
     axis: downsample(data.axis),
     label: data.label,
+  };
+}
+
+interface ApiStockPerformance {
+  values: number[];
+  axis: string[];
+  label: string;
+  sinceDate?: string;
+}
+
+export async function fetchHoldingPerformance(ticker: string, range: StockRange): Promise<PerformanceSeries> {
+  const response = await fetch(`${BASE_URL}/api/holdings/${ticker}/performance?range=${range.toLowerCase()}`);
+  const data: ApiStockPerformance = await response.json();
+  return {
+    values: data.values,
+    dates: data.axis,
+    axis: downsample(data.axis),
+    label: data.label,
+    sinceDate: data.sinceDate,
   };
 }
 

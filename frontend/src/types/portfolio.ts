@@ -1,5 +1,6 @@
 export type AssetType = 'Stocks' | 'Bonds' | 'Cash';
 export type TimeRange = '1W' | '2W' | '3W' | '1M';
+export type StockRange = '1D' | '1W' | '1M' | '1Y' | 'SINCE_BOUGHT';
 
 export interface Holding {
   id: string;
@@ -28,6 +29,7 @@ export interface PerformanceSeries {
   dates: string[];
   axis: string[];
   label: string;
+  sinceDate?: string;
 }
 
 export interface Transaction {

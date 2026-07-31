@@ -27,7 +27,11 @@ const recalculateAllocations = (items: Holding[]): Holding[] => {
   }));
 };
 
-export function HoldingsPage() {
+interface HoldingsPageProps {
+  onSelectStock: (holding: Holding) => void;
+}
+
+export function HoldingsPage({ onSelectStock }: HoldingsPageProps) {
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [isAdding, setIsAdding] = useState(false);
   const [query, setQuery] = useState('');
@@ -194,7 +198,12 @@ export function HoldingsPage() {
         <button type="button" className="primary-button holdings-add-button" onClick={() => setIsAdding(true)}>+ Buy holdings</button>
       </div>
 
-      <HoldingsTable holdings={visibleHoldings} onRequestBuy={() => setIsAddingBuy(true)} onRequestSell={setPendingSale} />
+      <HoldingsTable
+        holdings={visibleHoldings}
+        onRequestBuy={() => setIsAddingBuy(true)}
+        onRequestSell={setPendingSale}
+        onSelectStock={onSelectStock}
+      />
       {(isAdding || isAddingBuy) && <AddHoldingForm onCancel={() => { setIsAdding(false); setIsAddingBuy(false); }} onSubmit={handleAddHolding} />}
       {pendingSale && (
         <SellHoldingForm
