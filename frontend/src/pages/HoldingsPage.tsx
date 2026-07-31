@@ -136,8 +136,8 @@ export function HoldingsPage() {
     const filtered = liveHoldings.filter((holding) => {
       const matchesQuery =
         trimmedQuery === '' ||
-        holding.ticker.toLowerCase().includes(trimmedQuery) ||
-        holding.name.toLowerCase().includes(trimmedQuery);
+        holding.ticker.toLowerCase().startsWith(trimmedQuery) ||
+        holding.name.toLowerCase().startsWith(trimmedQuery);
       const matchesType = assetFilter === 'All' || holding.type === assetFilter;
       return matchesQuery && matchesType;
     });
