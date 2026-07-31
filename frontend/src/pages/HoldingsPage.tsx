@@ -37,6 +37,7 @@ export function HoldingsPage({ onSelectStock }: HoldingsPageProps) {
   const [isAdding, setIsAdding] = useState(false);
   const [query, setQuery] = useState('');
   const [assetFilter, setAssetFilter] = useState<AssetFilter>('All');
+  const [sectorFilter, setSectorFilter] = useState<string>('All');
   const [sortBy, setSortBy] = useState<SortOption>('name');
   const [isAddingBuy, setIsAddingBuy] = useState(false);
   const [pendingSale, setPendingSale] = useState<Holding | null>(null);
@@ -134,6 +135,11 @@ export function HoldingsPage({ onSelectStock }: HoldingsPageProps) {
     setLastRemoved(null);
   };
 
+  const sectors = useMemo(() => {
+    const unique = new Set(holdings.map((holding) => holding.sector).filter((sector): sector is string => Boolean(sector)));
+    return Array.from(unique).sort((a, b) => a.localeCompare(b));
+  }, [holdings]);
+
   const visibleHoldings = useMemo(() => {
     const liveHoldings = withLiveDailyChange(holdings, livePrices, previousCloses);
     const trimmedQuery = query.trim().toLowerCase();
@@ -143,7 +149,8 @@ export function HoldingsPage({ onSelectStock }: HoldingsPageProps) {
         holding.ticker.toLowerCase().startsWith(trimmedQuery) ||
         holding.name.toLowerCase().startsWith(trimmedQuery);
       const matchesType = assetFilter === 'All' || holding.type === assetFilter;
-      return matchesQuery && matchesType;
+      const matchesSector = sectorFilter === 'All' || (holding.sector ?? 'Other') === sectorFilter;
+      return matchesQuery && matchesType && matchesSector;
     });
 
     const sorted = [...filtered];
@@ -164,7 +171,7 @@ export function HoldingsPage({ onSelectStock }: HoldingsPageProps) {
         sorted.sort((a, b) => a.name.localeCompare(b.name));
     }
     return sorted;
-  }, [holdings, livePrices, previousCloses, query, assetFilter, sortBy]);
+  }, [holdings, livePrices, previousCloses, query, assetFilter, sectorFilter, sortBy]);
 
   return (
     <>
@@ -197,6 +204,17 @@ export function HoldingsPage({ onSelectStock }: HoldingsPageProps) {
           <option value="All">All asset types</option>
           <option value="Stocks">Stocks</option>
           <option value="Bonds">Bonds</option>
+        </select>
+        <select
+          className="select-input"
+          value={sectorFilter}
+          onChange={(event) => setSectorFilter(event.target.value)}
+          aria-label="Filter by sector"
+        >
+          <option value="All">All sectors</option>
+          {sectors.map((sector) => (
+            <option key={sector} value={sector}>{sector}</option>
+          ))}
         </select>
         <select
           className="select-input"
