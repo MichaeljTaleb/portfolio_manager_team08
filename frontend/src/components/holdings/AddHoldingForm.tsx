@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
+import { fetchSymbols, type StockSymbol } from '../../api/client';
 import type { Holding } from '../../types/portfolio';
 import { useLivePrices } from '../../contexts/LivePricesContext';
 import { formatPrice } from '../../utils/formatters';
@@ -16,6 +17,29 @@ export function AddHoldingForm({ onCancel, onSubmit }: AddHoldingFormProps) {
 
   const [ticker, setTicker] = useState('');
   const [quantity, setQuantity] = useState('');
+  const [symbols, setSymbols] = useState<StockSymbol[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  useEffect(() => {
+    fetchSymbols().then(setSymbols).catch(() => setSymbols([]));
+  }, []);
+
+  const trimmedTickerInput = ticker.trim().toLowerCase();
+  const suggestions = trimmedTickerInput
+    ? symbols
+        .filter(
+          (stock) =>
+            stock.symbol.toLowerCase().startsWith(trimmedTickerInput) ||
+            stock.name.toLowerCase().startsWith(trimmedTickerInput),
+        )
+        .slice(0, 6)
+    : [];
+
+  const handleSelectSuggestion = (stock: StockSymbol) => {
+    setTicker(stock.symbol);
+    setShowSuggestions(false);
+    setError(null);
+  };
 
   const livePrice = ticker ? (livePrices[ticker.toUpperCase()] ?? null) : null;
 
@@ -63,16 +87,35 @@ export function AddHoldingForm({ onCancel, onSubmit }: AddHoldingFormProps) {
         </div>
         <form className="modal-form" onSubmit={handleSubmit}>
           <fieldset className="modal-fieldset" disabled={isSubmitting}>
-            <label className="form-field">
-              <span>Ticker</span>
+            <label className="form-field ticker-field">
+              <span>Ticker or company name</span>
               <input
                 type="text"
                 value={ticker}
-                onChange={(event) => { setTicker(event.target.value); setError(null); }}
-                placeholder="e.g. AAPL"
-                maxLength={8}
+                onChange={(event) => { setTicker(event.target.value); setError(null); setShowSuggestions(true); }}
+                onFocus={() => setShowSuggestions(true)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 120)}
+                placeholder="e.g. AAPL or Apple"
+                maxLength={40}
+                autoComplete="off"
                 autoFocus
               />
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="ticker-suggestions">
+                  {suggestions.map((stock) => (
+                    <button
+                      type="button"
+                      key={stock.symbol}
+                      className="ticker-suggestion"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => handleSelectSuggestion(stock)}
+                    >
+                      <strong>{stock.symbol}</strong>
+                      <span>{stock.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
             </label>
             {ticker && (
               <label className="form-field">
@@ -90,7 +133,6 @@ export function AddHoldingForm({ onCancel, onSubmit }: AddHoldingFormProps) {
                 step="0.001"
                 value={quantity}
                 onChange={(event) => { setQuantity(event.target.value); setError(null); }}
-                placeholder="10"
                 disabled={!ticker}
               />
             </label>

@@ -8,9 +8,10 @@ interface HoldingsTableProps {
   holdings: Holding[];
   onRequestBuy?: (holding: Holding) => void;
   onRequestSell?: (holding: Holding) => void;
+  onSelectStock?: (holding: Holding) => void;
 }
 
-export function HoldingsTable({ holdings, onRequestBuy, onRequestSell }: HoldingsTableProps) {
+export function HoldingsTable({ holdings, onRequestBuy, onRequestSell, onSelectStock }: HoldingsTableProps) {
   const showActions = Boolean(onRequestBuy || onRequestSell);
   const livePrices = useLivePrices();
 
@@ -35,11 +36,17 @@ export function HoldingsTable({ holdings, onRequestBuy, onRequestSell }: Holding
           <tbody>
             {holdings.map((holding) => {
               const isCash = holding.type === 'Cash';
+              const isClickable = !isCash && Boolean(onSelectStock);
               const livePrice = livePrices[holding.ticker] ?? holding.currentPrice;
               const sector = holding.sector ?? 'Other';
               const sectorClass = sector.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
               return (
-                <tr key={holding.id} className="holding-row">
+                <tr
+                  key={holding.id}
+                  className="holding-row"
+                  data-clickable={isClickable}
+                  onClick={isClickable ? () => onSelectStock?.(holding) : undefined}
+                >
                   <td>
                     <div className="holding-cell">
                       <span className={`ticker-badge ${holding.type.toLowerCase()}`}>{holding.ticker}</span>
@@ -57,7 +64,7 @@ export function HoldingsTable({ holdings, onRequestBuy, onRequestSell }: Holding
                   <td className="numeric">{holding.allocation.toFixed(1)}%</td>
                   <td className="numeric holding-value">{formatCurrency(holding.value)}</td>
                   {showActions && (
-                    <td className="row-action-col">
+                    <td className="row-action-col" onClick={(event) => event.stopPropagation()}>
                       <RowActionsMenu
                         label={holding.ticker}
                         sellLabel={isCash ? 'Withdraw' : 'Sell'}

@@ -16,9 +16,10 @@ let cachedCash: CashSummary | null = null;
 
 interface DashboardPageProps {
   onViewHoldings: () => void;
+  onSelectStock: (holding: Holding) => void;
 }
 
-export function DashboardPage({ onViewHoldings }: DashboardPageProps) {
+export function DashboardPage({ onViewHoldings, onSelectStock }: DashboardPageProps) {
   const [range, setRange] = useState<TimeRange>('1M');
   const [now, setNow] = useState(() => new Date());
   const [holdings, setHoldings] = useState<Holding[]>(cachedHoldings);
@@ -99,7 +100,7 @@ export function DashboardPage({ onViewHoldings }: DashboardPageProps) {
       </div>
 
       <div className="dashboard-grid">
-        <PerformanceChart range={range} onRangeChange={setRange} totalValue={liveTotalValue} />
+        <PerformanceChart range={range} onRangeChange={setRange} totalValue={liveTotalValue} totalReturn={totalGainLoss} totalReturnPercent={totalGainLossPercent} />
         <div className="dashboard-rail">
           <div className="metric-grid">
             <MetricCard label="Today's change" value={formatSignedCurrency(dayGain)} detail={`${formatSignedPercent(dayGainPercent)} today`} tone={dayGain < 0 ? 'negative' : 'positive'} />
@@ -116,7 +117,7 @@ export function DashboardPage({ onViewHoldings }: DashboardPageProps) {
           View all holdings <span className="text-button-arrow">&rarr;</span>
         </button>
       </div>
-      <HoldingsTable holdings={liveHoldings.slice(0, 5)} />
+      <HoldingsTable holdings={liveHoldings.slice(0, 5)} onSelectStock={onSelectStock} />
     </>
   );
 }

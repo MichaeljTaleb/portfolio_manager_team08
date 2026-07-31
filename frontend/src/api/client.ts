@@ -1,4 +1,4 @@
-import type { AllocationItem, AssetType, CashSummary, Holding, PerformanceSeries, TimeRange } from '../types/portfolio';
+import type { AllocationItem, CashSummary, Holding, PerformanceSeries, StockRange, TimeRange } from '../types/portfolio';
 
 const BASE_URL = 'http://127.0.0.1:5001';
 
@@ -31,6 +31,16 @@ export async function fetchHoldings(): Promise<Holding[]> {
     currentPrice: holding.currentPrice,
     totalGainLoss: holding.totalGainLoss,
   }));
+}
+
+export interface StockSymbol {
+  symbol: string;
+  name: string;
+}
+
+export async function fetchSymbols(): Promise<StockSymbol[]> {
+  const response = await fetch(`${BASE_URL}/api/holdings/symbols`);
+  return response.json();
 }
 
 export interface PortfolioSummary {
@@ -88,6 +98,25 @@ export async function fetchPerformance(range: TimeRange): Promise<PerformanceSer
     dates: data.axis,
     axis: downsample(data.axis),
     label: data.label,
+  };
+}
+
+interface ApiStockPerformance {
+  values: number[];
+  axis: string[];
+  label: string;
+  sinceDate?: string;
+}
+
+export async function fetchHoldingPerformance(ticker: string, range: StockRange): Promise<PerformanceSeries> {
+  const response = await fetch(`${BASE_URL}/api/holdings/${ticker}/performance?range=${range.toLowerCase()}`);
+  const data: ApiStockPerformance = await response.json();
+  return {
+    values: data.values,
+    dates: data.axis,
+    axis: downsample(data.axis),
+    label: data.label,
+    sinceDate: data.sinceDate,
   };
 }
 

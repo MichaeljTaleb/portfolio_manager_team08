@@ -10,12 +10,14 @@ interface PerformanceChartProps {
   range: TimeRange;
   onRangeChange: (range: TimeRange) => void;
   totalValue: number;
+  totalReturn: number;
+  totalReturnPercent: number;
 }
 
 const ranges: TimeRange[] = ['1W', '2W', '3W', '1M'];
 const emptySeries: PerformanceSeries = { values: [], dates: [], axis: [], label: '' };
 
-export function PerformanceChart({ range, onRangeChange, totalValue }: PerformanceChartProps) {
+export function PerformanceChart({ range, onRangeChange, totalValue, totalReturn, totalReturnPercent }: PerformanceChartProps) {
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const [series, setSeries] = useState<PerformanceSeries>(emptySeries);
 
@@ -23,15 +25,15 @@ export function PerformanceChart({ range, onRangeChange, totalValue }: Performan
     fetchPerformance(range).then(setSeries);
   }, [range]);
 
-  const { values, paths, first, last, change, percent, tone } = useMemo(() => {
+  const { values, paths, first, last } = useMemo(() => {
     const vals = series.values.length ? series.values : [totalValue];
     const pths = buildChartPaths(vals);
     const f = vals[0];
     const l = vals.at(-1) ?? f;
-    const c = l - f;
-    const p = f ? ((l - f) / f) * 100 : 0;
-    return { values: vals, paths: pths, first: f, last: l, change: c, percent: p, tone: c >= 0 ? 'positive' : 'negative' };
+    return { values: vals, paths: pths, first: f, last: l };
   }, [series.values, totalValue]);
+
+  const tone = totalReturn >= 0 ? 'positive' : 'negative';
 
   const hovered = hoverIndex === null ? null : paths.points[hoverIndex];
   const hoveredLabel = hoverIndex === null ? null : series.dates[hoverIndex];
@@ -53,7 +55,7 @@ export function PerformanceChart({ range, onRangeChange, totalValue }: Performan
           <h1 className="portfolio-value">{formatCurrency(hovered ? hovered.value : totalValue)}</h1>
           <div className="range-summary">
             <span className={`change-pill ${tone}`}>
-              {change >= 0 ? '▲' : '▼'} {formatSignedCurrency(change)} ({formatSignedPercent(percent)})
+              {totalReturn >= 0 ? '▲' : '▼'} {formatSignedCurrency(totalReturn)} ({formatSignedPercent(totalReturnPercent)})
             </span>
             <span className="muted">{series.label}</span>
           </div>

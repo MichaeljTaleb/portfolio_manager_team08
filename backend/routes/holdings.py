@@ -1,3 +1,7 @@
+from datetime import date, timedelta
+
+import pandas as pd
+import yfinance as yf
 from flask import Blueprint, jsonify, request
 from sqlalchemy import text
 
@@ -63,7 +67,21 @@ def _set_cash_balance(session, new_cash):
         {"amount": new_cash},
     )
 
- 
+# Route to list all known stock symbols + names, for ticker autocomplete
+@holdings_bp.route('/symbols')
+def list_symbols():
+    with SessionLocal() as session:
+        rows = session.execute(
+            text(
+                """
+                SELECT symbol, name FROM stocks s
+                WHERE price_date = (SELECT MAX(price_date) FROM stocks WHERE symbol = s.symbol)
+                ORDER BY symbol
+                """
+            )
+        ).mappings().all()
+        return jsonify([{'symbol': r['symbol'], 'name': r['name']} for r in rows])
+
 # Route to list all holdings with their allocations
 @holdings_bp.route('/')
 def list_holdings():
@@ -98,6 +116,56 @@ def get_holding(ticker):
         holding = _build_holding(session, asset['symbol'], asset['quantity'])
         holding['allocation'] = round(holding['value'] / total * 100, 1)
         return jsonify(holding)
+
+
+# Route to get a symbol's price history for the stock detail page's chart.
+# Ranges 1d/1w/1m/1y map to fixed yfinance periods; since_bought starts from
+# the symbol's first BUY transaction date.
+@holdings_bp.route('/<ticker>/performance')
+def holding_performance(ticker):
+    range_param = (request.args.get('range', '1m') or '1m').lower()
+    ticker = ticker.upper()
+    since_date = None
+
+    if range_param == 'since_bought':
+        with SessionLocal() as session:
+            first_buy = session.execute(
+                text("SELECT MIN(executed_at) AS first_buy FROM transactions WHERE symbol = :symbol AND action = 'BUY'"),
+                {"symbol": ticker},
+            ).mappings().first()
+
+        start = first_buy['first_buy'].date() if first_buy and first_buy['first_buy'] else date.today()
+        hist = yf.download(ticker, start=start, end=date.today() + timedelta(days=1), interval="1d", auto_adjust=True, progress=False)
+        label = f"Since {start.strftime('%b %d, %Y')}"
+        since_date = start.isoformat()
+    else:
+        period_map = {
+            '1d': ('1d', '5m'),
+            '1w': ('5d', '30m'),
+            '1m': ('1mo', '1d'),
+            '1y': ('1y', '1d'),
+        }
+        period, interval = period_map.get(range_param, ('1mo', '1d'))
+        hist = yf.download(ticker, period=period, interval=interval, auto_adjust=True, progress=False)
+        label = range_param.upper()
+
+    if hist.empty:
+        return jsonify({'values': [], 'axis': [], 'label': label, 'sinceDate': since_date})
+
+    if isinstance(hist.columns, pd.MultiIndex):
+        close_series = hist['Close'][ticker] if ticker in hist['Close'].columns else hist['Close'].iloc[:, 0]
+    else:
+        close_series = hist['Close']
+
+    close_series = close_series.dropna()
+    date_format = '%Y-%m-%d %H:%M' if range_param in ('1d', '1w') else '%Y-%m-%d'
+
+    return jsonify({
+        'values': [round(float(v), 2) for v in close_series.tolist()],
+        'axis': [ts.strftime(date_format) for ts in close_series.index],
+        'label': label,
+        'sinceDate': since_date,
+    })
 
 # Recalculates today's portfolio_history row after a buy/sell changes cash + holdings value.
 # Keeps the user_assets CASH row and portfolio_history.cash_balance in sync.

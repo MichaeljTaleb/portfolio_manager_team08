@@ -27,7 +27,11 @@ const recalculateAllocations = (items: Holding[]): Holding[] => {
   }));
 };
 
-export function HoldingsPage() {
+interface HoldingsPageProps {
+  onSelectStock: (holding: Holding) => void;
+}
+
+export function HoldingsPage({ onSelectStock }: HoldingsPageProps) {
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
@@ -136,8 +140,8 @@ export function HoldingsPage() {
     const filtered = liveHoldings.filter((holding) => {
       const matchesQuery =
         trimmedQuery === '' ||
-        holding.ticker.toLowerCase().includes(trimmedQuery) ||
-        holding.name.toLowerCase().includes(trimmedQuery);
+        holding.ticker.toLowerCase().startsWith(trimmedQuery) ||
+        holding.name.toLowerCase().startsWith(trimmedQuery);
       const matchesType = assetFilter === 'All' || holding.type === assetFilter;
       return matchesQuery && matchesType;
     });
@@ -207,7 +211,12 @@ export function HoldingsPage() {
         <button type="button" className="primary-button holdings-add-button" onClick={() => setIsAdding(true)}>+ Buy holdings</button>
           </div>
 
-          <HoldingsTable holdings={visibleHoldings} onRequestBuy={() => setIsAddingBuy(true)} onRequestSell={setPendingSale} />
+          <HoldingsTable
+            holdings={visibleHoldings}
+            onRequestBuy={() => setIsAddingBuy(true)}
+            onRequestSell={setPendingSale}
+            onSelectStock={onSelectStock}
+          />
         </>
       )}
       {(isAdding || isAddingBuy) && <AddHoldingForm onCancel={() => { setIsAdding(false); setIsAddingBuy(false); }} onSubmit={handleAddHolding} />}
