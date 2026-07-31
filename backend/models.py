@@ -40,6 +40,7 @@ class Stock(Base):
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     price_date: Mapped[date] = mapped_column(Date, primary_key=True)
     open_price: Mapped[Decimal] = mapped_column(DECIMAL(12, 4), nullable=False)
+    sector: Mapped[str] = mapped_column(String(100), nullable=True)
 
 
 class UserAsset(Base):

@@ -115,6 +115,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .donut-wrap svg { width: 148px; height: 148px; transform: rotate(-90deg); }
 .donut-segment { transition: stroke-dashoffset 900ms cubic-bezier(0.16, 1, 0.3, 1), opacity 0.15s ease; cursor: pointer; }
 .donut-segment[data-dimmed='true'] { opacity: 0.35; }
+.donut-subsegment { cursor: pointer; }
 @media (prefers-reduced-motion: reduce) {
   .chart-svg-animate, .fade-slide-in, .loading-animation { animation: none; }
   .donut-segment { transition: opacity 0.15s ease; }
@@ -123,13 +124,18 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .donut-label span { color: var(--muted); font-size: 12px; }
 .donut-label strong { margin-top: 2px; font-size: 22px; }
 .allocation-legend { flex: none; display: flex; flex-direction: column; gap: 12px; }
+.allocation-legend-group { display: flex; flex-direction: column; gap: 5px; }
+.allocation-sublegend { margin-left: 14px; font-size: 12px; color: var(--muted); }
+.allocation-sublegend .legend-dot { width: 7px; height: 7px; }
+.allocation-popover { position: absolute; z-index: 2; left: 50%; top: calc(100% + 8px); width: max-content; max-width: 190px; transform: translateX(-50%); display: flex; flex-direction: column; gap: 3px; padding: 9px 11px; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: var(--radius-sm); background: rgba(22, 34, 57, 0.78); box-shadow: 0 12px 28px rgba(0, 0, 0, 0.3); backdrop-filter: blur(12px); color: var(--text); font-size: 11px; white-space: nowrap; pointer-events: none; }
+.allocation-popover span { color: var(--muted); }
 .legend-item { display: grid; grid-template-columns: 11px 1fr auto; align-items: center; gap: 11px; font-size: 14px; cursor: pointer; border-radius: var(--radius-sm); padding: 2px 6px; margin: -2px -6px; transition: background 0.15s ease; }
 .legend-item[data-active='true'] { background: rgba(243, 246, 251, 0.06); }
 .legend-dot { width: 11px; height: 11px; border-radius: 2px; }
 
 .table-card { overflow: hidden; }
 .table-scroll { overflow-x: auto; }
-.holdings-table { width: 100%; border-collapse: collapse; min-width: 1040px; }
+.holdings-table { width: 100%; border-collapse: collapse; min-width: 1150px; }
 .holdings-table th { padding: 12px 14px; color: var(--muted); font-size: 11px; font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase; text-align: left; }
 .holdings-table td { padding: 13px 14px; border-top: 1px solid rgba(143, 155, 176, 0.14); }
 .holdings-table tbody tr:hover { background: rgba(243, 246, 251, 0.035); }
@@ -147,6 +153,18 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .asset-tag.cash { color: var(--muted); background: rgba(143, 155, 176, 0.12); }
 .asset-tag.deposit { color: var(--positive); background: var(--positive-soft); }
 .asset-tag.withdraw { color: var(--negative); background: var(--negative-soft); }
+.sector-badge { display: inline-flex; padding: 3px 8px; border-radius: 999px; font-size: 11px; color: #cbd5e1; background: rgba(148, 163, 184, 0.14); }
+.sector-technology, .sector-information-technology { color: #bfdbfe; background: rgba(59, 130, 246, 0.16); }
+.sector-health-care { color: #bbf7d0; background: rgba(34, 197, 94, 0.16); }
+.sector-financials { color: #ddd6fe; background: rgba(139, 92, 246, 0.17); }
+.sector-consumer-discretionary { color: #fecdd3; background: rgba(244, 63, 94, 0.16); }
+.sector-consumer-staples { color: #fde68a; background: rgba(245, 158, 11, 0.16); }
+.sector-communication-services { color: #a5f3fc; background: rgba(6, 182, 212, 0.16); }
+.sector-industrials { color: #fed7aa; background: rgba(249, 115, 22, 0.16); }
+.sector-energy { color: #fef08a; background: rgba(234, 179, 8, 0.16); }
+.sector-utilities { color: #bae6fd; background: rgba(14, 165, 233, 0.16); }
+.sector-real-estate { color: #f5d0fe; background: rgba(217, 70, 239, 0.16); }
+.sector-materials { color: #d9f99d; background: rgba(132, 204, 22, 0.16); }
 .holding-value { font-weight: 600; }
 .cash-table { min-width: 0; }
 .table-empty { text-align: center; color: var(--muted); padding: 28px 14px !important; }

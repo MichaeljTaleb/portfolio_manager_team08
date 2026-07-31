@@ -5,6 +5,8 @@ const BASE_URL = 'http://127.0.0.1:5001';
 interface ApiHolding {
   ticker: string;
   name: string;
+  type?: AssetType;
+  sector?: string;
   quantity: number;
   currentPrice: number;
   value: number;
@@ -19,12 +21,12 @@ export async function fetchHoldings(): Promise<Holding[]> {
     id: holding.ticker,
     ticker: holding.ticker,
     name: holding.name,
+    sector: holding.sector ?? 'Other',
     value: holding.value,
     allocation: holding.allocation,
     // TODO: replace with live day-over-day change once the websocket feed exists.
     dailyChange: 0,
-    // Backend doesn't classify Stock vs Bond yet; everything it tracks is a stock position.
-    type: 'Stocks',
+    type: holding.type ?? 'Stocks',
     quantity: holding.quantity,
     currentPrice: holding.currentPrice,
     totalGainLoss: holding.totalGainLoss,
