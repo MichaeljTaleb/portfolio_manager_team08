@@ -70,12 +70,14 @@ def sync_daily_stock_prices(db: Session) -> int:
 
                     existing_stock = db.query(Stock).filter(Stock.symbol == symbol).first()
                     company_name = existing_stock.name if existing_stock else symbol
+                    sector = existing_stock.sector if existing_stock else None
 
                     stock_record = Stock(
                         symbol=symbol,
                         name=company_name,
                         price_date=record_date,
-                        open_price=decimal_price
+                        open_price=decimal_price,
+                        sector=sector,
                     )
                     db.add(stock_record)
                     inserted_records_count += 1

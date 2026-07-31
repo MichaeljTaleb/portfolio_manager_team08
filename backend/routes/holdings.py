@@ -6,6 +6,7 @@ from flask import Blueprint, jsonify, request
 from sqlalchemy import text
 
 from database import SessionLocal
+from websocket_manager import simulator
 
 holdings_bp = Blueprint('holdings', __name__)
 
@@ -38,7 +39,7 @@ def _build_holding(session, symbol, quantity):
     return {
         'ticker': symbol,
         'name': latest['name'] if latest else symbol,
-        'sector': latest['sector'] if (latest and 'sector' in latest) else 'Other',
+        'sector': latest['sector'] if (latest and latest['sector']) else 'Other',
         'quantity': quantity,
         'currentPrice': latest_price,
         'avgCostBasis': avg_cost_basis,
@@ -67,6 +68,51 @@ def _set_cash_balance(session, new_cash):
         ),
         {"amount": new_cash},
     )
+
+@holdings_bp.route('/search')
+def search_symbols():
+    query = request.args.get('q', '').strip()
+    if not query:
+        return jsonify([])
+
+    try:
+        quotes = yf.Search(query, max_results=8, news_count=0, lists_count=0).quotes
+    except Exception:
+        return jsonify({'error': 'Unable to search Yahoo Finance right now.'}), 502
+
+    supported_types = {'EQUITY', 'ETF', 'MUTUALFUND'}
+    results = [
+        {
+            'symbol': quote['symbol'].upper(),
+            'name': quote.get('shortname') or quote.get('longname') or quote['symbol'].upper(),
+        }
+        for quote in quotes
+        if quote.get('quoteType') in supported_types
+    ]
+    return jsonify(results)
+
+
+# Return a Yahoo Finance quote and add the symbol to the live feed.
+@holdings_bp.route('/quote/<ticker>')
+def get_quote(ticker):
+    ticker = ticker.upper()
+    quote = simulator.subscribe(ticker)
+    if quote is None:
+        return jsonify({'error': f'Price is not available for {ticker}.'}), 404
+
+    try:
+        info = yf.Ticker(ticker).info or {}
+    except Exception:
+        info = {}
+
+    return jsonify({
+        'symbol': ticker,
+        'name': info.get('shortName') or info.get('longName') or ticker,
+        'sector': info.get('sector') or 'Other',
+        'price': float(quote['price']),
+        'previousClose': float(quote['previous_close']),
+    })
+
 
 # Route to list all known stock symbols + names, for ticker autocomplete
 @holdings_bp.route('/symbols')
@@ -249,15 +295,40 @@ def _update_todays_snapshot(session, cash_delta):
 @holdings_bp.route('/', methods=['POST'])
 def create_holding():
     data = request.get_json()
+    ticker = data['ticker'].upper()
     cost = data['quantity'] * data['price']
 
     with SessionLocal() as session:
         if cost > _get_cash_balance(session):
             return jsonify({'error': 'insufficient cash'}), 400
 
+        existing_stock = session.execute(
+            text("SELECT 1 FROM stocks WHERE symbol = :symbol LIMIT 1"),
+            {'symbol': ticker},
+        ).first()
+        if existing_stock is None:
+            try:
+                info = yf.Ticker(ticker).info or {}
+            except Exception:
+                info = {}
+            session.execute(
+                text(
+                    """
+                    INSERT INTO stocks (symbol, name, sector, price_date, open_price)
+                    VALUES (:symbol, :name, :sector, CURDATE(), :price)
+                    """
+                ),
+                {
+                    'symbol': ticker,
+                    'name': info.get('shortName') or info.get('longName') or ticker,
+                    'sector': info.get('sector') or 'Other',
+                    'price': data['price'],
+                },
+            )
+
         existing = session.execute(
             text("SELECT quantity, avg_cost_basis FROM user_assets WHERE symbol = :symbol"),
-            {"symbol": data['ticker']},
+            {"symbol": ticker},
         ).mappings().first()
 
         existing_quantity = float(existing['quantity']) if existing else 0.0
@@ -275,15 +346,15 @@ def create_holding():
                 ON DUPLICATE KEY UPDATE quantity = :quantity, avg_cost_basis = :avg_cost_basis
                 """
             ),
-            {"symbol": data['ticker'], "quantity": new_quantity, "avg_cost_basis": new_avg_cost},
+            {"symbol": ticker, "quantity": new_quantity, "avg_cost_basis": new_avg_cost},
         )
         session.execute(
             text("INSERT INTO transactions (symbol, action, quantity, price) VALUES (:symbol, 'BUY', :quantity, :price)"),
-            {"symbol": data['ticker'], "quantity": data['quantity'], "price": data['price']},
+            {"symbol": ticker, "quantity": data['quantity'], "price": data['price']},
         )
         _update_todays_snapshot(session, -cost)
         session.commit()
-        return jsonify({'ticker': data['ticker'], 'quantity': data['quantity']}), 201
+        return jsonify({'ticker': ticker, 'quantity': data['quantity']}), 201
 
 # Route to sell a stock
 @holdings_bp.route('/<ticker>/sell', methods=['POST'])

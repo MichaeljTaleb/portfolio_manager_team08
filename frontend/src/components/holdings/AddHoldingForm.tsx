@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { fetchSymbols, type StockSymbol } from '../../api/client';
+import { fetchQuote, searchSymbols, type StockQuote, type StockSymbol } from '../../api/client';
 import type { Holding } from '../../types/portfolio';
 import { useLivePrices } from '../../contexts/LivePricesContext';
 import { formatPrice } from '../../utils/formatters';
@@ -19,11 +19,27 @@ export function AddHoldingForm({ initialTicker, onCancel, onSubmit }: AddHolding
   const [ticker, setTicker] = useState(initialTicker ?? '');
   const [quantity, setQuantity] = useState('');
   const [symbols, setSymbols] = useState<StockSymbol[]>([]);
+  const [quote, setQuote] = useState<StockQuote | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
-    fetchSymbols().then(setSymbols).catch(() => setSymbols([]));
-  }, []);
+    const query = ticker.trim();
+    if (!query) {
+      setSymbols([]);
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setIsSearching(true);
+      searchSymbols(query)
+        .then(setSymbols)
+        .catch(() => setSymbols([]))
+        .finally(() => setIsSearching(false));
+    }, 250);
+
+    return () => window.clearTimeout(timeout);
+  }, [ticker]);
 
   const trimmedTickerInput = ticker.trim().toLowerCase();
   const suggestions = trimmedTickerInput
@@ -36,13 +52,19 @@ export function AddHoldingForm({ initialTicker, onCancel, onSubmit }: AddHolding
         .slice(0, 6)
     : [];
 
-  const handleSelectSuggestion = (stock: StockSymbol) => {
+  const handleSelectSuggestion = async (stock: StockSymbol) => {
     setTicker(stock.symbol);
     setShowSuggestions(false);
     setError(null);
+    setQuote(null);
+    try {
+      setQuote(await fetchQuote(stock.symbol));
+    } catch (quoteError) {
+      setError(quoteError instanceof Error ? quoteError.message : 'Price is not available for this symbol.');
+    }
   };
 
-  const livePrice = ticker ? (livePrices[ticker.toUpperCase()] ?? null) : null;
+  const livePrice = ticker ? (livePrices[ticker.toUpperCase()] ?? quote?.price ?? null) : null;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -60,8 +82,9 @@ export function AddHoldingForm({ initialTicker, onCancel, onSubmit }: AddHolding
     try {
       await onSubmit({
         ticker: trimmedTicker,
-        name: trimmedTicker,
+        name: quote?.name ?? trimmedTicker,
         type: 'Stocks',
+        sector: quote?.sector ?? 'Other',
         quantity: qty,
         currentPrice: price,
         value: qty * price,
@@ -93,7 +116,7 @@ export function AddHoldingForm({ initialTicker, onCancel, onSubmit }: AddHolding
               <input
                 type="text"
                 value={ticker}
-                onChange={(event) => { setTicker(event.target.value); setError(null); setShowSuggestions(true); }}
+                onChange={(event) => { setTicker(event.target.value); setQuote(null); setError(null); setShowSuggestions(true); }}
                 onFocus={() => setShowSuggestions(true)}
                 onBlur={() => setTimeout(() => setShowSuggestions(false), 120)}
                 placeholder="e.g. AAPL or Apple"
@@ -117,6 +140,7 @@ export function AddHoldingForm({ initialTicker, onCancel, onSubmit }: AddHolding
                   ))}
                 </div>
               )}
+              {showSuggestions && isSearching && <span className="ticker-searching">Searching Yahoo Finance…</span>}
             </label>
             {ticker && (
               <label className="form-field">
