@@ -255,15 +255,27 @@ def create_holding():
         if cost > _get_cash_balance(session):
             return jsonify({'error': 'insufficient cash'}), 400
 
+        existing = session.execute(
+            text("SELECT quantity, avg_cost_basis FROM user_assets WHERE symbol = :symbol"),
+            {"symbol": data['ticker']},
+        ).mappings().first()
+
+        existing_quantity = float(existing['quantity']) if existing else 0.0
+        existing_avg_cost = float(existing['avg_cost_basis']) if existing else 0.0
+        new_quantity = existing_quantity + data['quantity']
+        # Weighted average of the existing cost basis and this purchase's price,
+        # so avg_cost_basis stays accurate across multiple buys of the same stock.
+        new_avg_cost = (existing_quantity * existing_avg_cost + data['quantity'] * data['price']) / new_quantity
+
         session.execute(
             text(
                 """
-                INSERT INTO user_assets (symbol, quantity)
-                VALUES (:symbol, :quantity)
-                ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)
+                INSERT INTO user_assets (symbol, quantity, avg_cost_basis)
+                VALUES (:symbol, :quantity, :avg_cost_basis)
+                ON DUPLICATE KEY UPDATE quantity = :quantity, avg_cost_basis = :avg_cost_basis
                 """
             ),
-            {"symbol": data['ticker'], "quantity": data['quantity']},
+            {"symbol": data['ticker'], "quantity": new_quantity, "avg_cost_basis": new_avg_cost},
         )
         session.execute(
             text("INSERT INTO transactions (symbol, action, quantity, price) VALUES (:symbol, 'BUY', :quantity, :price)"),
