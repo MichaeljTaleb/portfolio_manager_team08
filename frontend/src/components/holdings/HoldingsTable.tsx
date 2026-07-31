@@ -22,6 +22,7 @@ export function HoldingsTable({ holdings, onRequestBuy, onRequestSell }: Holding
             <tr>
               <th>Holding</th>
               <th>Type</th>
+              <th>Sector</th>
               <th className="numeric">Quantity</th>
               <th className="numeric">Current price</th>
               <th className="numeric">Today (%)</th>
@@ -35,6 +36,8 @@ export function HoldingsTable({ holdings, onRequestBuy, onRequestSell }: Holding
             {holdings.map((holding) => {
               const isCash = holding.type === 'Cash';
               const livePrice = livePrices[holding.ticker] ?? holding.currentPrice;
+              const sector = holding.sector ?? 'Other';
+              const sectorClass = sector.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
               return (
                 <tr key={holding.id} className="holding-row">
                   <td>
@@ -44,6 +47,7 @@ export function HoldingsTable({ holdings, onRequestBuy, onRequestSell }: Holding
                     </div>
                   </td>
                   <td><span className={`asset-tag ${holding.type.toLowerCase()}`}>{holding.type}</span></td>
+                  <td><span className={`sector-badge sector-${sectorClass}`}>{sector}</span></td>
                   <td className="numeric">{isCash ? '—' : formatQuantity(holding.quantity)}</td>
                   <td className="numeric">{isCash ? '—' : formatPrice(livePrice)}</td>
                   <td className={`numeric ${holding.dailyChange > 0 ? 'positive' : holding.dailyChange < 0 ? 'negative' : 'muted'}`}>{formatSignedPercent(holding.dailyChange)}</td>
