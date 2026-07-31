@@ -166,6 +166,59 @@ def holding_performance(ticker):
         'sinceDate': since_date,
     })
 
+
+# Route to get a symbol's earnings date + analyst rating/price targets for
+# the stock detail page. yfinance's calendar/info data is sparse for some
+# tickers, so every field is best-effort and can come back null.
+@holdings_bp.route('/<ticker>/analysis')
+def holding_analysis(ticker):
+    ticker = ticker.upper()
+    stock = yf.Ticker(ticker)
+
+    earnings_date = None
+    try:
+        calendar = stock.calendar
+        raw_date = None
+        if isinstance(calendar, dict):
+            raw_date = calendar.get('Earnings Date')
+        elif calendar is not None and not calendar.empty and 'Earnings Date' in calendar.index:
+            raw_date = calendar.loc['Earnings Date'].iloc[0]
+
+        if isinstance(raw_date, (list, tuple)) and raw_date:
+            raw_date = raw_date[0]
+        if raw_date is not None:
+            earnings_date = raw_date.isoformat() if hasattr(raw_date, 'isoformat') else str(raw_date)
+    except Exception:
+        earnings_date = None
+
+    recommendation = None
+    recommendation_mean = None
+    number_of_analysts = None
+    target_mean_price = None
+    target_high_price = None
+    target_low_price = None
+    try:
+        info = stock.info
+        recommendation = info.get('recommendationKey')
+        recommendation_mean = info.get('recommendationMean')
+        number_of_analysts = info.get('numberOfAnalystOpinions')
+        target_mean_price = info.get('targetMeanPrice')
+        target_high_price = info.get('targetHighPrice')
+        target_low_price = info.get('targetLowPrice')
+    except Exception:
+        pass
+
+    return jsonify({
+        'earningsDate': earnings_date,
+        'recommendation': recommendation,
+        'recommendationMean': recommendation_mean,
+        'numberOfAnalysts': number_of_analysts,
+        'targetMeanPrice': target_mean_price,
+        'targetHighPrice': target_high_price,
+        'targetLowPrice': target_low_price,
+    })
+
+
 # Recalculates today's portfolio_history row after a buy/sell changes cash + holdings value.
 # Keeps the user_assets CASH row and portfolio_history.cash_balance in sync.
 def _update_todays_snapshot(session, cash_delta):

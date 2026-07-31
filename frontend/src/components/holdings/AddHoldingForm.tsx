@@ -6,16 +6,17 @@ import { useLivePrices } from '../../contexts/LivePricesContext';
 import { formatPrice } from '../../utils/formatters';
 
 interface AddHoldingFormProps {
+  initialTicker?: string;
   onCancel: () => void;
   onSubmit: (holding: Omit<Holding, 'id' | 'allocation'>) => void | Promise<void>;
 }
 
-export function AddHoldingForm({ onCancel, onSubmit }: AddHoldingFormProps) {
+export function AddHoldingForm({ initialTicker, onCancel, onSubmit }: AddHoldingFormProps) {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const livePrices = useLivePrices();
 
-  const [ticker, setTicker] = useState('');
+  const [ticker, setTicker] = useState(initialTicker ?? '');
   const [quantity, setQuantity] = useState('');
   const [symbols, setSymbols] = useState<StockSymbol[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);

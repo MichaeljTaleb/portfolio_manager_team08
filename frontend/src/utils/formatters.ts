@@ -35,6 +35,13 @@ export const formatAsOf = (date: Date): string => {
   return `${formatted.replace(/,(?!.*,)/, ' ·')} ET`;
 };
 
+export const formatDate = (isoString: string): string =>
+  new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(new Date(isoString));
+
 export const formatDateTime = (isoString: string): string =>
   new Intl.DateTimeFormat('en-US', {
     month: 'short',

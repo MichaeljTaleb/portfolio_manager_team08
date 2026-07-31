@@ -1,4 +1,4 @@
-import type { AllocationItem, CashSummary, Holding, PerformanceSeries, StockRange, TimeRange } from '../types/portfolio';
+import type { AllocationItem, CashSummary, Holding, PerformanceSeries, StockAnalysis, StockRange, TimeRange } from '../types/portfolio';
 
 const BASE_URL = 'http://127.0.0.1:5001';
 
@@ -29,6 +29,23 @@ export async function fetchHoldings(): Promise<Holding[]> {
     currentPrice: holding.currentPrice,
     totalGainLoss: holding.totalGainLoss,
   }));
+}
+
+export async function fetchHoldingDetail(ticker: string): Promise<Holding> {
+  const response = await fetch(`${BASE_URL}/api/holdings/${ticker}`);
+  const holding: ApiHolding = await response.json();
+  return {
+    id: holding.ticker,
+    ticker: holding.ticker,
+    name: holding.name,
+    value: holding.value,
+    allocation: holding.allocation,
+    dailyChange: 0,
+    type: 'Stocks',
+    quantity: holding.quantity,
+    currentPrice: holding.currentPrice,
+    totalGainLoss: holding.totalGainLoss,
+  };
 }
 
 export interface StockSymbol {
@@ -116,6 +133,11 @@ export async function fetchHoldingPerformance(ticker: string, range: StockRange)
     label: data.label,
     sinceDate: data.sinceDate,
   };
+}
+
+export async function fetchHoldingAnalysis(ticker: string): Promise<StockAnalysis> {
+  const response = await fetch(`${BASE_URL}/api/holdings/${ticker}/analysis`);
+  return response.json();
 }
 
 export async function buyHolding(ticker: string, quantity: number, price: number): Promise<void> {

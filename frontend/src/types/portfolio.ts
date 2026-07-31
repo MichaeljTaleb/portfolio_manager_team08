@@ -44,3 +44,13 @@ export interface CashSummary {
   balance: number;
   transactions: Transaction[];
 }
+
+export interface StockAnalysis {
+  earningsDate: string | null;
+  recommendation: string | null;
+  recommendationMean: number | null;
+  numberOfAnalysts: number | null;
+  targetMeanPrice: number | null;
+  targetHighPrice: number | null;
+  targetLowPrice: number | null;
+}

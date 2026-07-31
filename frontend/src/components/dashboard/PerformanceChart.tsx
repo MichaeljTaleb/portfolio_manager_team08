@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { MouseEvent } from 'react';
 import type { PerformanceSeries, TimeRange } from '../../types/portfolio';
 import { buildChartPaths } from '../../utils/chart';
+import { useChartRangeSelect } from '../../utils/useChartRangeSelect';
 import { formatCurrency, formatSignedCurrency, formatSignedPercent } from '../../utils/formatters';
 import { fetchPerformance } from '../../api/client';
 import { Card } from '../common/Card';
@@ -18,33 +18,36 @@ const ranges: TimeRange[] = ['1W', '2W', '3W', '1M'];
 const emptySeries: PerformanceSeries = { values: [], dates: [], axis: [], label: '' };
 
 export function PerformanceChart({ range, onRangeChange, totalValue, totalReturn, totalReturnPercent }: PerformanceChartProps) {
-  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const [series, setSeries] = useState<PerformanceSeries>(emptySeries);
 
   useEffect(() => {
     fetchPerformance(range).then(setSeries);
   }, [range]);
 
-  const { values, paths, first, last } = useMemo(() => {
+  const paths = useMemo(() => {
     const vals = series.values.length ? series.values : [totalValue];
-    const pths = buildChartPaths(vals);
-    const f = vals[0];
-    const l = vals.at(-1) ?? f;
-    return { values: vals, paths: pths, first: f, last: l };
+    return buildChartPaths(vals);
   }, [series.values, totalValue]);
+
+  const { hoverIndex, dragRange, handleMouseDown, handleMouseMove, handleMouseUp, handleMouseLeave } = useChartRangeSelect(paths);
 
   const tone = totalReturn >= 0 ? 'positive' : 'negative';
 
-  const hovered = hoverIndex === null ? null : paths.points[hoverIndex];
-  const hoveredLabel = hoverIndex === null ? null : series.dates[hoverIndex];
+  const hovered = !dragRange && hoverIndex !== null ? paths.points[hoverIndex] : null;
+  const hoveredLabel = !dragRange && hoverIndex !== null ? series.dates[hoverIndex] : null;
 
-  const handleMove = (event: MouseEvent<HTMLDivElement>) => {
-    const bounds = event.currentTarget.getBoundingClientRect();
-    if (bounds.width === 0) return;
-    const ratio = (event.clientX - bounds.left) / bounds.width;
-    const index = Math.round(Math.min(1, Math.max(0, ratio)) * (paths.points.length - 1));
-    setHoverIndex(index);
-  };
+  const dragLowIndex = dragRange ? Math.min(dragRange.startIndex, dragRange.endIndex) : null;
+  const dragHighIndex = dragRange ? Math.max(dragRange.startIndex, dragRange.endIndex) : null;
+  const dragStartPoint = dragLowIndex !== null ? paths.points[dragLowIndex] : null;
+  const dragEndPoint = dragHighIndex !== null ? paths.points[dragHighIndex] : null;
+  const dragChangeValue = dragStartPoint && dragEndPoint ? dragEndPoint.value - dragStartPoint.value : 0;
+  const dragChangePercent = dragStartPoint?.value ? (dragChangeValue / dragStartPoint.value) * 100 : 0;
+  const dragTone = dragChangeValue >= 0 ? 'positive' : 'negative';
+  const dragColor = dragTone === 'positive' ? 'var(--positive)' : 'var(--negative)';
+  const dragMidX = dragStartPoint && dragEndPoint ? (dragStartPoint.x + dragEndPoint.x) / 2 : 0;
+  const dragMidY = dragStartPoint && dragEndPoint ? (dragStartPoint.y + dragEndPoint.y) / 2 : 0;
+
+  const displayedValue = dragEndPoint ? dragEndPoint.value : hovered ? hovered.value : totalValue;
 
   return (
     <Card className="performance-card">
@@ -52,11 +55,17 @@ export function PerformanceChart({ range, onRangeChange, totalValue, totalReturn
       <div className="performance-header fade-slide-in">
         <div>
           <span className="eyebrow">Total portfolio value</span>
-          <h1 className="portfolio-value">{formatCurrency(hovered ? hovered.value : totalValue)}</h1>
+          <h1 className="portfolio-value">{formatCurrency(displayedValue)}</h1>
           <div className="range-summary">
-            <span className={`change-pill ${tone}`}>
-              {totalReturn >= 0 ? '▲' : '▼'} {formatSignedCurrency(totalReturn)} ({formatSignedPercent(totalReturnPercent)})
-            </span>
+            {dragRange ? (
+              <span className={`change-pill ${dragTone}`}>
+                {dragChangeValue >= 0 ? '▲' : '▼'} {formatSignedCurrency(dragChangeValue)} ({formatSignedPercent(dragChangePercent)}) selected
+              </span>
+            ) : (
+              <span className={`change-pill ${tone}`}>
+                {totalReturn >= 0 ? '▲' : '▼'} {formatSignedCurrency(totalReturn)} ({formatSignedPercent(totalReturnPercent)})
+              </span>
+            )}
             <span className="muted">{series.label}</span>
           </div>
         </div>
@@ -77,8 +86,10 @@ export function PerformanceChart({ range, onRangeChange, totalValue, totalReturn
       <div className="chart-wrap">
         <div
           className="chart-plot"
-          onMouseMove={handleMove}
-          onMouseLeave={() => setHoverIndex(null)}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseLeave}
         >
         <svg key={range} className="chart-svg-animate" viewBox="0 0 720 210" preserveAspectRatio="none" role="img" aria-label={`Portfolio performance for the ${series.label}`}>
           <defs>
@@ -88,6 +99,16 @@ export function PerformanceChart({ range, onRangeChange, totalValue, totalReturn
             </linearGradient>
           </defs>
           <path d={paths.area} fill="url(#portfolioArea)" />
+          {dragStartPoint && dragEndPoint && (
+            <rect
+              x={Math.min(dragStartPoint.x, dragEndPoint.x)}
+              y="0"
+              width={Math.max(1, Math.abs(dragEndPoint.x - dragStartPoint.x))}
+              height={paths.height}
+              fill={dragColor}
+              fillOpacity="0.14"
+            />
+          )}
           <path d={paths.line} fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
           {hovered && (
             <line
@@ -99,6 +120,12 @@ export function PerformanceChart({ range, onRangeChange, totalValue, totalReturn
               strokeWidth="1"
               vectorEffect="non-scaling-stroke"
             />
+          )}
+          {dragStartPoint && dragEndPoint && (
+            <>
+              <line x1={dragStartPoint.x} x2={dragStartPoint.x} y1="0" y2={paths.height} stroke={dragColor} strokeWidth="1" vectorEffect="non-scaling-stroke" />
+              <line x1={dragEndPoint.x} x2={dragEndPoint.x} y1="0" y2={paths.height} stroke={dragColor} strokeWidth="1" vectorEffect="non-scaling-stroke" />
+            </>
           )}
         </svg>
         {hovered && (
@@ -117,6 +144,23 @@ export function PerformanceChart({ range, onRangeChange, totalValue, totalReturn
             >
               <strong>{formatCurrency(hovered.value)}</strong>
               {hoveredLabel && <span>{hoveredLabel}</span>}
+            </div>
+          </>
+        )}
+        {dragStartPoint && dragEndPoint && (
+          <>
+            <span className="chart-dot" style={{ left: `${(dragStartPoint.x / paths.width) * 100}%`, top: `${(dragStartPoint.y / paths.height) * 100}%`, background: dragColor, boxShadow: `0 0 0 3px ${dragTone === 'positive' ? 'var(--positive-soft)' : 'var(--negative-soft)'}` }} />
+            <span className="chart-dot" style={{ left: `${(dragEndPoint.x / paths.width) * 100}%`, top: `${(dragEndPoint.y / paths.height) * 100}%`, background: dragColor, boxShadow: `0 0 0 3px ${dragTone === 'positive' ? 'var(--positive-soft)' : 'var(--negative-soft)'}` }} />
+            <div
+              className="chart-tooltip"
+              data-flip={dragMidY / paths.height < 0.3}
+              style={{
+                left: `${Math.min(92, Math.max(8, (dragMidX / paths.width) * 100))}%`,
+                top: `${(dragMidY / paths.height) * 100}%`,
+              }}
+            >
+              <strong className={dragTone}>{formatSignedCurrency(dragChangeValue)}</strong>
+              <span>{formatSignedPercent(dragChangePercent)}</span>
             </div>
           </>
         )}
