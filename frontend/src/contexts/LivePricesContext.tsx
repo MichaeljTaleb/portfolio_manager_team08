@@ -92,19 +92,25 @@ export function withLiveDailyChange(
 
     const referencePrice = previousCloses[holding.ticker] ?? holding.currentPrice;
     const dailyChange = ((livePrice - referencePrice) / referencePrice) * 100;
+    // True dollar gain since the reference price — quantity times the actual
+    // price delta, not the live value scaled by a percentage (that overstates
+    // the gain, since it applies today's % change to today's already-moved
+    // value instead of to the starting value).
+    const dayGainValue = holding.quantity * (livePrice - referencePrice);
 
     return {
       ...holding,
       value: holding.quantity * livePrice,
       dailyChange,
+      dayGainValue,
     };
   });
 }
 
-// Aggregates each holding's dollar gain (value * dailyChange%) into a
-// portfolio-wide day gain, expressed as a percentage of total portfolio value.
+// Aggregates each holding's true dollar gain since the reference price into
+// a portfolio-wide day gain, expressed as a percentage of total portfolio value.
 export function computeDayGain(holdings: Holding[], totalValue: number): { dayGain: number; dayGainPercent: number } {
-  const dayGain = holdings.reduce((sum, holding) => sum + holding.value * (holding.dailyChange / 100), 0);
+  const dayGain = holdings.reduce((sum, holding) => sum + (holding.dayGainValue ?? 0), 0);
   const dayGainPercent = totalValue ? (dayGain / totalValue) * 100 : 0;
   return { dayGain, dayGainPercent };
 }

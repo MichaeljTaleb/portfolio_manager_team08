@@ -9,6 +9,7 @@ export interface Holding {
   value: number;
   allocation: number;
   dailyChange: number;
+  dayGainValue?: number;
   type: AssetType;
   sector?: string;
   quantity: number;

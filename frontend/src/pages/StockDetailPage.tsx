@@ -120,6 +120,9 @@ export function StockDetailPage({ holding: initialHolding, onBack }: StockDetail
 
   const avgCost = holding.quantity ? (holding.value - holding.totalGainLoss) / holding.quantity : 0;
 
+  const sector = holding.sector ?? 'Other';
+  const sectorClass = sector.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
   const earningsDaysUntil = analysis?.earningsDate ? daysUntil(analysis.earningsDate) : null;
   const earningsDetail =
     earningsDaysUntil === null ? undefined : earningsDaysUntil > 0 ? `in ${earningsDaysUntil} days` : earningsDaysUntil === 0 ? 'today' : 'reported';
@@ -149,7 +152,10 @@ export function StockDetailPage({ holding: initialHolding, onBack }: StockDetail
       <div className="page-heading">
         <div>
           <h1>{ticker}</h1>
-          <p>{holding.name}</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <p style={{ margin: 0 }}>{holding.name}</p>
+            <span className={`sector-badge sector-${sectorClass}`}>{sector}</span>
+          </div>
         </div>
         <div className="holdings-toolbar" style={{ marginBottom: 0 }}>
           <button type="button" className="primary-button" onClick={() => setIsBuying(true)}>Buy</button>

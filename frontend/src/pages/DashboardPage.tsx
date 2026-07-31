@@ -3,14 +3,13 @@ import { AllocationCard } from '../components/dashboard/AllocationCard';
 import { MetricCard } from '../components/dashboard/MetricCard';
 import { PerformanceChart } from '../components/dashboard/PerformanceChart';
 import { HoldingsTable } from '../components/holdings/HoldingsTable';
-import { fetchAllocation, fetchCash, fetchHoldings, fetchSummary, type PortfolioSummary } from '../api/client';
+import { fetchAllocation, fetchCash, fetchHoldings } from '../api/client';
 import { computeDayGain, usePreviousCloses, useLivePrices, withLiveDailyChange } from '../contexts/LivePricesContext';
 import { getFirstName, useUser } from '../contexts/UserContext';
 import type { AllocationItem, CashSummary, Holding, TimeRange } from '../types/portfolio';
 import { formatAsOf, formatPrice, formatSignedCurrency, formatSignedPercent, getGreeting } from '../utils/formatters';
 
 let cachedHoldings: Holding[] = [];
-let cachedSummary: PortfolioSummary | null = null;
 let cachedAllocations: AllocationItem[] = [];
 let cachedCash: CashSummary | null = null;
 
@@ -23,7 +22,6 @@ export function DashboardPage({ onViewHoldings, onSelectStock }: DashboardPagePr
   const [range, setRange] = useState<TimeRange>('1M');
   const [now, setNow] = useState(() => new Date());
   const [holdings, setHoldings] = useState<Holding[]>(cachedHoldings);
-  const [summary, setSummary] = useState<PortfolioSummary | null>(cachedSummary);
   const [allocations, setAllocations] = useState<AllocationItem[]>(cachedAllocations);
   const [cashSummary, setCashSummary] = useState<CashSummary | null>(cachedCash);
   const livePrices = useLivePrices();
@@ -40,9 +38,8 @@ export function DashboardPage({ onViewHoldings, onSelectStock }: DashboardPagePr
 
     const loadDashboardData = async () => {
       try {
-        const [nextHoldings, nextSummary, nextAllocations, nextCash] = await Promise.all([
+        const [nextHoldings, nextAllocations, nextCash] = await Promise.all([
           fetchHoldings(),
-          fetchSummary(),
           fetchAllocation(),
           fetchCash(),
         ]);
@@ -50,12 +47,10 @@ export function DashboardPage({ onViewHoldings, onSelectStock }: DashboardPagePr
         if (!active) return;
 
         cachedHoldings = nextHoldings;
-        cachedSummary = nextSummary;
         cachedAllocations = nextAllocations;
         cachedCash = nextCash;
 
         setHoldings(nextHoldings);
-        setSummary(nextSummary);
         setAllocations(nextAllocations);
         setCashSummary(nextCash);
       } catch (error) {
@@ -74,12 +69,15 @@ export function DashboardPage({ onViewHoldings, onSelectStock }: DashboardPagePr
     () => withLiveDailyChange(holdings, livePrices, previousCloses),
     [holdings, livePrices, previousCloses],
   );
-  const { dayGain, dayGainPercent } = useMemo(
-    () => computeDayGain(liveHoldings, summary?.totalValue ?? 0),
-    [liveHoldings, summary],
-  );
-  const liveTotalValue = (summary?.totalValue ?? 0) + dayGain;
   const cashValue = cashSummary?.balance ?? 0;
+  const liveTotalValue = useMemo(
+    () => liveHoldings.reduce((sum, holding) => sum + holding.value, 0) + cashValue,
+    [liveHoldings, cashValue],
+  );
+  const { dayGain, dayGainPercent } = useMemo(
+    () => computeDayGain(liveHoldings, liveTotalValue),
+    [liveHoldings, liveTotalValue],
+  );
 
   const totalGainLoss = useMemo(
     () => liveHoldings.reduce((sum, holding) => sum + holding.totalGainLoss, 0),
