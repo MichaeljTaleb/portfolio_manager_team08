@@ -120,6 +120,19 @@ class PriceSimulator:
             logger.error(f"Error fetching live prices from yfinance: {e}")
         return quotes
 
+    def subscribe(self, symbol: str) -> Dict[str, Decimal] | None:
+        """Add a user-selected symbol to the live feed and return its latest quote."""
+        symbol = symbol.upper()
+        quotes = self._fetch_live_prices([symbol])
+        quote = quotes.get(symbol)
+        if quote is None:
+            return None
+
+        if symbol not in self.tickers:
+            self.tickers.append(symbol)
+        self.latest_prices[symbol] = quote["price"]
+        return quote
+
     def _run_loop(self, interval_seconds: float):
         while self.is_running:
             try:

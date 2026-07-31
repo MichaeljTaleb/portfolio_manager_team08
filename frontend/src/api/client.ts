@@ -56,8 +56,26 @@ export interface StockSymbol {
   name: string;
 }
 
+export interface StockQuote extends StockSymbol {
+  sector: string;
+  price: number;
+  previousClose: number;
+}
+
 export async function fetchSymbols(): Promise<StockSymbol[]> {
   const response = await fetch(`${BASE_URL}/api/holdings/symbols`);
+  return response.json();
+}
+
+export async function searchSymbols(query: string): Promise<StockSymbol[]> {
+  const response = await fetch(`${BASE_URL}/api/holdings/search?q=${encodeURIComponent(query)}`);
+  if (!response.ok) throw new Error('Unable to search for stocks right now.');
+  return response.json();
+}
+
+export async function fetchQuote(ticker: string): Promise<StockQuote> {
+  const response = await fetch(`${BASE_URL}/api/holdings/quote/${encodeURIComponent(ticker)}`);
+  if (!response.ok) throw new Error('Price is not available for this symbol.');
   return response.json();
 }
 
