@@ -24,6 +24,18 @@ STOCK_NAMES = {
 }
 
 
+def fetch_stock_sectors(tickers: list[str]) -> dict[str,str]:
+    sectors = {}
+    for symbol in tickers:
+        try:
+            ticker_info = yf.Ticker(symbol).info or {}
+            sector = ticker_info.get("sector", "Other")
+            sectors[symbol] = sector
+        except Exception as e:
+            print(f"Could not fetch sector for {symbol}: {e}")
+            sectors[symbol] = "Other"
+    return sectors
+
 def seed_database(reset: bool = False):
     Base.metadata.create_all(bind=engine)
     db: Session = SessionLocal()
@@ -43,6 +55,8 @@ def seed_database(reset: bool = False):
                 return
 
         print("Seeding database with the last month of daily stock history")
+
+        sectors = fetch_stock_sectors(STOCK_TICKERS)
 
         hist_df = yf.download(STOCK_TICKERS, period="1mo", interval="1d")
         if hist_df.empty:
@@ -65,6 +79,7 @@ def seed_database(reset: bool = False):
                         name=STOCK_NAMES[symbol],
                         price_date=record_date,
                         open_price=decimal_price,
+                        sector=sectors.get(symbol, "Other"),
                     )
                     db.add(stock_record)
 

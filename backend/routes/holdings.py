@@ -10,13 +10,13 @@ holdings_bp = Blueprint('holdings', __name__)
 def _build_holding(session, symbol, quantity):
     # Get today's opening price for accurate daily change calculation
     today_price = session.execute(
-        text("SELECT name, open_price FROM stocks WHERE symbol = :symbol AND price_date = CURDATE()"),
+        text("SELECT name, sector, open_price FROM stocks WHERE symbol = :symbol AND price_date = CURDATE()"),
         {"symbol": symbol},
     ).mappings().first()
 
     # Fall back to latest if today's data not available
     latest = today_price or session.execute(
-        text("SELECT name, open_price FROM stocks WHERE symbol = :symbol ORDER BY price_date DESC LIMIT 1"),
+        text("SELECT name, sector, open_price FROM stocks WHERE symbol = :symbol ORDER BY price_date DESC LIMIT 1"),
         {"symbol": symbol},
     ).mappings().first()
 
@@ -34,6 +34,7 @@ def _build_holding(session, symbol, quantity):
     return {
         'ticker': symbol,
         'name': latest['name'] if latest else symbol,
+        'sector': latest['sector'] if (latest and 'sector' in latest) else 'Other',
         'quantity': quantity,
         'currentPrice': latest_price,
         'value': value,
@@ -62,6 +63,7 @@ def _set_cash_balance(session, new_cash):
         {"amount": new_cash},
     )
 
+ 
 # Route to list all holdings with their allocations
 @holdings_bp.route('/')
 def list_holdings():
