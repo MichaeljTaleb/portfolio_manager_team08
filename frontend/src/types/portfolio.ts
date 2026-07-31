@@ -10,6 +10,7 @@ export interface Holding {
   allocation: number;
   dailyChange: number;
   type: AssetType;
+  sector?: string;
   quantity: number;
   currentPrice: number;
   totalGainLoss: number;
