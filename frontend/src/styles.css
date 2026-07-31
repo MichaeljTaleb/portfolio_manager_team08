@@ -267,6 +267,7 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .ticker-suggestion:hover { background: rgba(243, 246, 251, 0.08); }
 .ticker-suggestion strong { flex: none; font-size: 12px; font-weight: 600; }
 .ticker-suggestion span { color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ticker-searching { display: block; padding: 7px 9px; color: var(--muted); font-size: 12px; }
 
 .text-button { border: 0; background: none; color: var(--accent-hover); cursor: pointer; font-size: 13px; }
 .text-button:hover { color: #bfdbfe; }
