@@ -31,6 +31,16 @@ export async function fetchHoldings(): Promise<Holding[]> {
   }));
 }
 
+export interface StockSymbol {
+  symbol: string;
+  name: string;
+}
+
+export async function fetchSymbols(): Promise<StockSymbol[]> {
+  const response = await fetch(`${BASE_URL}/api/holdings/symbols`);
+  return response.json();
+}
+
 export interface PortfolioSummary {
   asOf: string;
   totalValue: number;
