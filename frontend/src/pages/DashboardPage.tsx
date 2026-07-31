@@ -3,14 +3,13 @@ import { AllocationCard } from '../components/dashboard/AllocationCard';
 import { MetricCard } from '../components/dashboard/MetricCard';
 import { PerformanceChart } from '../components/dashboard/PerformanceChart';
 import { HoldingsTable } from '../components/holdings/HoldingsTable';
-import { fetchAllocation, fetchCash, fetchHoldings } from '../api/client';
+import { fetchCash, fetchHoldings } from '../api/client';
 import { computeDayGain, usePreviousCloses, useLivePrices, withLiveDailyChange } from '../contexts/LivePricesContext';
 import { getFirstName, useUser } from '../contexts/UserContext';
-import type { AllocationItem, CashSummary, Holding, TimeRange } from '../types/portfolio';
+import type { CashSummary, Holding, TimeRange } from '../types/portfolio';
 import { formatAsOf, formatPrice, formatSignedCurrency, formatSignedPercent, getGreeting } from '../utils/formatters';
 
 let cachedHoldings: Holding[] = [];
-let cachedAllocations: AllocationItem[] = [];
 let cachedCash: CashSummary | null = null;
 
 interface DashboardPageProps {
@@ -22,7 +21,6 @@ export function DashboardPage({ onViewHoldings, onSelectStock }: DashboardPagePr
   const [range, setRange] = useState<TimeRange>('1M');
   const [now, setNow] = useState(() => new Date());
   const [holdings, setHoldings] = useState<Holding[]>(cachedHoldings);
-  const [allocations, setAllocations] = useState<AllocationItem[]>(cachedAllocations);
   const [cashSummary, setCashSummary] = useState<CashSummary | null>(cachedCash);
   const livePrices = useLivePrices();
   const previousCloses = usePreviousCloses();
@@ -38,20 +36,17 @@ export function DashboardPage({ onViewHoldings, onSelectStock }: DashboardPagePr
 
     const loadDashboardData = async () => {
       try {
-        const [nextHoldings, nextAllocations, nextCash] = await Promise.all([
+        const [nextHoldings, nextCash] = await Promise.all([
           fetchHoldings(),
-          fetchAllocation(),
           fetchCash(),
         ]);
 
         if (!active) return;
 
         cachedHoldings = nextHoldings;
-        cachedAllocations = nextAllocations;
         cachedCash = nextCash;
 
         setHoldings(nextHoldings);
-        setAllocations(nextAllocations);
         setCashSummary(nextCash);
       } catch (error) {
         console.error('Failed to load dashboard data', error);

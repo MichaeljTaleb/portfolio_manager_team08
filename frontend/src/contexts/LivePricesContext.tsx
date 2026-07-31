@@ -97,12 +97,21 @@ export function withLiveDailyChange(
     // the gain, since it applies today's % change to today's already-moved
     // value instead of to the starting value).
     const dayGainValue = holding.quantity * (livePrice - referencePrice);
+    // The backend computes totalGainLoss from the opening price, so it goes
+    // stale the moment the live price moves away from open. Recompute it here
+    // against the live price so it stays consistent with the live value shown
+    // alongside it, wherever avgCostBasis is available.
+    const totalGainLoss =
+      holding.avgCostBasis !== undefined
+        ? holding.quantity * (livePrice - holding.avgCostBasis)
+        : holding.totalGainLoss;
 
     return {
       ...holding,
       value: holding.quantity * livePrice,
       dailyChange,
       dayGainValue,
+      totalGainLoss,
     };
   });
 }

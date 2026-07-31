@@ -118,7 +118,12 @@ export function StockDetailPage({ holding: initialHolding, onBack }: StockDetail
   const dayChangeValue = holding.quantity * (displayPrice - referencePrice);
   const dayTone = dayChangeValue >= 0 ? 'positive' : 'negative';
 
-  const avgCost = holding.quantity ? (holding.value - holding.totalGainLoss) / holding.quantity : 0;
+  // avgCostBasis comes straight from the backend rather than being derived from
+  // (value - totalGainLoss)/quantity — that derivation breaks once value is live
+  // and totalGainLoss isn't (or vice versa), since it assumes both share the same
+  // price basis.
+  const avgCost = holding.avgCostBasis ?? 0;
+  const liveTotalGainLoss = avgCost ? holding.quantity * (displayPrice - avgCost) : holding.totalGainLoss;
 
   const sector = holding.sector ?? 'Other';
   const sectorClass = sector.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -280,9 +285,9 @@ export function StockDetailPage({ holding: initialHolding, onBack }: StockDetail
         <MetricCard label="Quantity owned" value={formatQuantity(holding.quantity)} />
         <MetricCard
           label="Total gain/loss"
-          value={formatSignedCurrency(holding.totalGainLoss)}
-          detail={formatSignedPercent(avgCost ? (holding.totalGainLoss / (avgCost * holding.quantity)) * 100 : 0)}
-          tone={holding.totalGainLoss < 0 ? 'negative' : 'positive'}
+          value={formatSignedCurrency(liveTotalGainLoss)}
+          detail={formatSignedPercent(avgCost ? (liveTotalGainLoss / (avgCost * holding.quantity)) * 100 : 0)}
+          tone={liveTotalGainLoss < 0 ? 'negative' : 'positive'}
         />
         <MetricCard label="Market value" value={formatCurrency(holding.quantity * displayPrice)} />
         <MetricCard label="Allocation" value={`${holding.allocation.toFixed(1)}%`} />

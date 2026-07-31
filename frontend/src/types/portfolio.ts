@@ -14,6 +14,7 @@ export interface Holding {
   sector?: string;
   quantity: number;
   currentPrice: number;
+  avgCostBasis?: number;
   totalGainLoss: number;
   purchaseDate?: string;
   couponRate?: number;

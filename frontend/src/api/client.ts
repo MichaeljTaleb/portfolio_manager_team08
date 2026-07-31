@@ -9,6 +9,7 @@ interface ApiHolding {
   sector?: string;
   quantity: number;
   currentPrice: number;
+  avgCostBasis?: number;
   value: number;
   allocation: number;
   totalGainLoss: number;
@@ -29,6 +30,7 @@ export async function fetchHoldings(): Promise<Holding[]> {
     type: holding.type ?? 'Stocks',
     quantity: holding.quantity,
     currentPrice: holding.currentPrice,
+    avgCostBasis: holding.avgCostBasis,
     totalGainLoss: holding.totalGainLoss,
   }));
 }
@@ -47,6 +49,7 @@ export async function fetchHoldingDetail(ticker: string): Promise<Holding> {
     type: holding.type ?? 'Stocks',
     quantity: holding.quantity,
     currentPrice: holding.currentPrice,
+    avgCostBasis: holding.avgCostBasis,
     totalGainLoss: holding.totalGainLoss,
   };
 }

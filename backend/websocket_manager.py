@@ -63,6 +63,7 @@ class PriceSimulator:
         self.tickers: List[str] = []
         self.latest_prices: Dict[str, Decimal] = {}
         self._thread: threading.Thread = None
+        self._warmed_up = False
 
     def load_initial_prices(self):
         db: Session = SessionLocal()
@@ -108,7 +109,10 @@ class PriceSimulator:
                 try:
                     fast_info = tickers_obj.tickers[symbol].fast_info
                     last_price = fast_info["last_price"]
-                    previous_close = fast_info["previous_close"]
+                    # fast_info has two different "previous close" fields that can diverge
+                    # significantly; regular_market_previous_close is the one that matches
+                    # what real finance sites use as "Prev Close" for daily % change.
+                    previous_close = fast_info["regular_market_previous_close"]
                     if last_price is not None and previous_close is not None:
                         quotes[symbol] = {
                             "price": Decimal(str(round(float(last_price), 2))),
@@ -134,9 +138,16 @@ class PriceSimulator:
                     if not self.tickers:
                         continue
 
-                # Pick 2 to 4 random stocks per tick to spread out API calls
-                k_sample = min(random.randint(2, 4), len(self.tickers))
-                selected_symbols = random.sample(self.tickers, k=k_sample)
+                if not self._warmed_up:
+                    # First tick after a client connects: cover every tracked ticker
+                    # in one burst so prices/% change don't take several throttled
+                    # cycles to populate. One-time cost, not sustained polling.
+                    selected_symbols = list(self.tickers)
+                    self._warmed_up = True
+                else:
+                    # Pick 2 to 4 random stocks per tick to spread out API calls
+                    k_sample = min(random.randint(2, 4), len(self.tickers))
+                    selected_symbols = random.sample(self.tickers, k=k_sample)
 
                 live_quotes = self._fetch_live_prices(selected_symbols)
                 tick_updates = []

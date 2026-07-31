@@ -41,6 +41,7 @@ def _build_holding(session, symbol, quantity):
         'sector': latest['sector'] if (latest and 'sector' in latest) else 'Other',
         'quantity': quantity,
         'currentPrice': latest_price,
+        'avgCostBasis': avg_cost_basis,
         'value': value,
         'totalGainLoss': total_gain_loss,
     }
