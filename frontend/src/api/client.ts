@@ -91,8 +91,30 @@ export interface PortfolioSummary {
   totalReturnPercent: number;
 }
 
+export interface QuantAdvisorSummary {
+  totalValue: number;
+  healthScore: number;
+  metrics: {
+    risk: number;
+    efficiency: number;
+    maxDip: number;
+    beta: number;
+  };
+  forecast: Array<{ day: number; low: number; likely: number; high: number }>;
+  sectorRisk: Array<{ name: string; value: number; moneyWeight: number; riskWeight: number }>;
+}
+
 export async function fetchSummary(): Promise<PortfolioSummary> {
   const response = await fetch(`${BASE_URL}/api/portfolio/summary`);
+  return response.json();
+}
+
+export async function fetchQuantAdvisorSummary(): Promise<QuantAdvisorSummary> {
+  const response = await fetch(`${BASE_URL}/api/quant-advisor/summary`);
+  if (!response.ok) {
+    const body = await response.json().catch(() => null);
+    throw new Error(body?.error ?? 'Unable to load Quant Advisor summary.');
+  }
   return response.json();
 }
 

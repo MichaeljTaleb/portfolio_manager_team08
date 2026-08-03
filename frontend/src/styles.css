@@ -286,6 +286,374 @@ button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 @keyframes loading-spin {
   to { transform: rotate(360deg); }
 }
+
+.quant-advisor-page {
+  color: #e5edf8;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  font-family: Inter, system-ui, sans-serif;
+}
+.quant-advisor-loading {
+  min-height: 380px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #94a3b8;
+}
+.quant-advisor-spinner {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 3px solid rgba(56, 189, 248, 0.2);
+  border-top-color: #38bdf8;
+  animation: loading-spin 0.8s linear infinite;
+}
+.quant-advisor-hero {
+  padding: 24px 26px;
+  border-radius: 14px;
+  background: linear-gradient(115deg, #071629, #102a43);
+  border: 1px solid #263b55;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.quant-advisor-title {
+  margin: 0;
+  font-size: 26px;
+  letter-spacing: -0.03em;
+}
+.quant-advisor-subtitle {
+  margin: 5px 0 0;
+  color: #9fb0c7;
+  font-size: 14px;
+}
+.quant-advisor-hero-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.quant-advisor-review-button {
+  border: 0;
+  border-radius: 10px;
+  padding: 11px 15px;
+  background: linear-gradient(135deg, #0ea5e9, #2563eb);
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}
+.quant-advisor-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(190px, 1fr));
+  gap: 14px;
+}
+.quant-advisor-kpi-card {
+  position: relative;
+  min-height: 120px;
+  padding: 17px;
+  border-radius: 12px;
+  background: #202b3f;
+  border: 1px solid #344158;
+}
+.quant-advisor-kpi-label {
+  display: flex;
+  justify-content: space-between;
+  color: #9fb0c7;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.quant-advisor-info-button {
+  border: 1px solid #526179;
+  border-radius: 50%;
+  width: 17px;
+  height: 17px;
+  padding: 0;
+  background: transparent;
+  color: #9fb0c7;
+  cursor: help;
+}
+.quant-advisor-kpi-value {
+  display: block;
+  margin-top: 8px;
+  font-size: 25px;
+  letter-spacing: -0.03em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.quant-advisor-kpi-caption {
+  margin: 5px 0 0;
+  color: #9fb0c7;
+  font-size: 12px;
+  line-height: 1.35;
+}
+.quant-advisor-tooltip {
+  position: absolute;
+  z-index: 4;
+  left: 12px;
+  right: 12px;
+  bottom: calc(100% + 7px);
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.93);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  color: #e5edf8;
+  font-size: 12px;
+  line-height: 1.4;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+}
+.quant-advisor-content-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.75fr) minmax(300px, 0.85fr);
+  gap: 18px;
+}
+.quant-advisor-panel {
+  min-width: 0;
+  padding: 20px;
+  border-radius: 14px;
+  background: #202b3f;
+  border: 1px solid #344158;
+}
+.quant-advisor-risk-panel {
+  max-height: 510px;
+  overflow: auto;
+}
+.quant-advisor-panel-header {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: start;
+}
+.quant-advisor-panel-title {
+  margin: 0;
+  font-size: 16px;
+}
+.quant-advisor-panel-subtitle {
+  margin: 4px 0 12px;
+  color: #9fb0c7;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.quant-advisor-nav-badge {
+  padding: 6px 9px;
+  border-radius: 7px;
+  background: #172338;
+  color: #d6dfed;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.quant-advisor-chart {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  min-height: 180px;
+  overflow: visible;
+}
+.quant-advisor-forecast-layout {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+.quant-advisor-forecast-summary-stack {
+  display: flex;
+  flex-direction: column;
+  width: 200px;
+  gap: 10px;
+}
+.quant-advisor-forecast-summary-card {
+  padding: 12px 13px;
+  border-radius: 10px;
+  background: #121d30;
+  border: 1px solid #2d3951;
+}
+.quant-advisor-forecast-label {
+  display: block;
+  margin-bottom: 6px;
+  color: #9fb0c7;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.quant-advisor-forecast-summary-card strong {
+  display: block;
+  font-size: 14px;
+  color: #f8fbff;
+}
+.quant-advisor-forecast-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 8px 0 12px;
+}
+.quant-advisor-forecast-stat {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #121d30;
+  border: 1px solid #2d3951;
+}
+.quant-advisor-forecast-label {
+  display: block;
+  margin-bottom: 6px;
+  color: #9fb0c7;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.quant-advisor-forecast-stat strong {
+  display: block;
+  font-size: 14px;
+  color: #f8fbff;
+}
+.quant-advisor-legend {
+  display: flex;
+  gap: 22px;
+  flex-wrap: wrap;
+  border-top: 1px solid #354158;
+  padding-top: 13px;
+  color: #c3d0e3;
+  font-size: 12px;
+}
+.quant-advisor-legend-dot {
+  display: inline-block;
+  width: 12px;
+  height: 2px;
+  margin: 0 7px 3px 0;
+  vertical-align: middle;
+}
+.quant-advisor-risk-list {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+.quant-advisor-risk-item {
+  padding: 12px 13px;
+  border-radius: 10px;
+  background: #121d30;
+}
+.quant-advisor-risk-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+}
+.quant-advisor-risk-label {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 9px;
+  color: #9fb0c7;
+  font-size: 10px;
+}
+.quant-advisor-track {
+  height: 6px;
+  margin-top: 4px;
+  overflow: hidden;
+  background: #26344b;
+  border-radius: 999px;
+}
+.quant-advisor-bar {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+}
+.quant-advisor-empty {
+  color: #9fb0c7;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.quant-advisor-copilot {
+  padding: 20px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #141d31, #1f293f);
+  border: 1px solid #3a4660;
+}
+.quant-advisor-copilot-intro {
+  color: #dce8f7;
+  font-size: 14px;
+}
+.quant-advisor-copilot-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #c084fc;
+  margin-right: 7px;
+}
+.quant-advisor-prompt-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0 12px;
+}
+.quant-advisor-prompt-pill {
+  border: 1px solid rgba(192, 132, 252, 0.28);
+  background: rgba(192, 132, 252, 0.12);
+  color: #e9d5ff;
+  border-radius: 999px;
+  padding: 7px 11px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.quant-advisor-chat-log {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  max-height: 320px;
+  overflow-y: auto;
+  margin: 15px 0;
+}
+.quant-advisor-message {
+  max-width: 82%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  white-space: pre-wrap;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.quant-advisor-user-message {
+  align-self: flex-end;
+  background: #075985;
+  color: white;
+}
+.quant-advisor-assistant-message {
+  align-self: flex-start;
+  background: #101b2d;
+  border: 1px solid #334155;
+}
+.quant-advisor-error {
+  margin: 0 0 10px;
+  color: #fda4af;
+  font-size: 12px;
+}
+.quant-advisor-chat-form {
+  display: flex;
+  gap: 10px;
+}
+.quant-advisor-chat-input {
+  min-width: 0;
+  flex: 1;
+  padding: 10px 12px;
+  color: #e5edf8;
+  background: #0b1323;
+  border: 1px solid #40506b;
+  border-radius: 8px;
+  font: inherit;
+}
+.quant-advisor-send-button {
+  border: 0;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: #0ea5e9;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .search-input, .select-input {
   font: inherit;
   color: var(--text);

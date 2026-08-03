@@ -1,6 +1,6 @@
 import { getInitials, useUser } from '../../contexts/UserContext';
 
-export type View = 'dashboard' | 'holdings' | 'cash' | 'profile';
+export type View = 'dashboard' | 'holdings' | 'cash' | 'quant-advisor' | 'profile';
 
 interface AppHeaderProps {
   activeView: View;
@@ -11,6 +11,7 @@ const navItems: { view: View; label: string }[] = [
   { view: 'dashboard', label: 'Dashboard' },
   { view: 'holdings', label: 'Holdings' },
   { view: 'cash', label: 'Cash & Activity' },
+  { view: 'quant-advisor', label: 'Analytics & Advisor' },
 ];
 
 export function AppHeader({ activeView, onChangeView }: AppHeaderProps) {

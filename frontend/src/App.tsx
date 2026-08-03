@@ -7,6 +7,7 @@ import { CashPage } from './pages/CashPage';
 import { DashboardPage } from './pages/DashboardPage';
 import { HoldingsPage } from './pages/HoldingsPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { QuantAdvisorPage } from './pages/QuantAdvisorPage';
 import { StockDetailPage } from './pages/StockDetailPage';
 import type { Holding } from './types/portfolio';
 
@@ -32,6 +33,7 @@ export default function App() {
               )}
               {view === 'holdings' && <HoldingsPage onSelectStock={setSelectedHolding} />}
               {view === 'cash' && <CashPage />}
+              {view === 'quant-advisor' && <QuantAdvisorPage />}
               {view === 'profile' && <ProfilePage />}
             </>
           )}
