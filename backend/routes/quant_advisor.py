@@ -117,7 +117,7 @@ def _build_summary_payload(session):
         return {
             'totalValue': round(total_value, 2),
             'healthScore': 0,
-            'metrics': {'risk': 0, 'efficiency': 0, 'maxDip': 0, 'beta': 0},
+            'metrics': {'risk': 0, 'efficiency': 0},
             'forecast': [{'day': index, 'low': 0, 'likely': 0, 'high': 0} for index in range(FORECAST_DAYS + 1)],
             'sectorRisk': [],
         }
@@ -148,11 +148,9 @@ def _build_summary_payload(session):
     volatility = min(0.34, max(0.08, 0.11 + concentration * 0.22))
     daily_volatility = volatility / math.sqrt(252)
     forecast = _create_forecast(total_value or 1, daily_volatility)
-    end_value = forecast[-1]
 
     health_score = round(max(25, min(97, 92 - concentration * 70 - max(0, volatility - 0.16) * 90 + min(len(risks), 6) * 2)))
     efficiency = max(0.08, min(1.2, 0.58 - volatility + len(risks) * 0.025))
-    beta = max(0.65, min(1.55, 0.8 + concentration * 0.9))
 
     return {
         'totalValue': round(total_value, 2),
@@ -160,9 +158,6 @@ def _build_summary_payload(session):
         'metrics': {
             'risk': round(volatility * 100, 1),
             'efficiency': round(efficiency, 2),
-            'maxDip': round(max(0, total_value - end_value['low']), 2),
-            'beta': round(beta, 2),
-            'marketSensitivityProxy': round(beta, 2),
         },
         'forecast': forecast,
         'sectorRisk': sector_breakdown,
