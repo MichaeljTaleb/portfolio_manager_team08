@@ -2,9 +2,10 @@
 
 ### Team 8 - Katelyn Vo, Michael Taleb, Sasi Vattikuti
 
-<img width="1470" height="810" alt="Screenshot 2026-08-04 at 5 07 28 AM" src="https://github.com/user-attachments/assets/a525ad0a-0bb5-42d0-a280-77e4454aa20d" />
-
 Vantage is a full stack portfolio management app for tracking stock holdings, cash balances, and portfolio performance over time with live price updates and an AI assisted quant advisor.
+
+
+<img width="1470" height="810" alt="Screenshot 2026-08-04 at 5 07 28 AM" src="https://github.com/user-attachments/assets/a525ad0a-0bb5-42d0-a280-77e4454aa20d" />
 
 ## Features
 
