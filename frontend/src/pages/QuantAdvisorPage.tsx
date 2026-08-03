@@ -44,7 +44,7 @@ export function QuantAdvisorPage() {
   const [summary, setSummary] = useState<{
     totalValue: number;
     healthScore: number;
-    metrics: { risk: number; efficiency: number; maxDip: number; beta: number };
+    metrics: { risk: number; efficiency: number };
     forecast: Array<{ day: number; low: number; likely: number; high: number }>;
     sectorRisk: Array<{ name: string; value: number; moneyWeight: number; riskWeight: number }>;
   } | null>(null);
@@ -135,7 +135,7 @@ export function QuantAdvisorPage() {
   const kpis = [
     { key: 'health', label: 'Health score', value: `${summary.healthScore}/100`, tone: '#34d399', caption: 'Overall portfolio health', tip: 'A higher score suggests a more balanced and resilient portfolio.' },
     { key: 'concentration', label: 'Diversification Index', value: summary.metrics.risk ? `${percent.format(summary.metrics.risk)}%` : '0.0%', tone: '#fbbf24', caption: 'Portfolio concentration proxy', tip: 'This is a concentration-based measure of how concentrated the portfolio is across holdings.' },
-    { key: 'efficiency', label: 'Investement Efficiency', value: summary.metrics.efficiency.toFixed(2), tone: '#38bdf8', caption: 'Risk-adjusted return proxy', tip: 'This is a simple efficiency proxy that compares expected return potential with portfolio concentration risk.' },
+    { key: 'efficiency', label: 'Investment Efficiency', value: summary.metrics.efficiency.toFixed(2), tone: '#38bdf8', caption: 'Risk-adjusted return proxy', tip: 'This is a simple efficiency proxy that compares expected return potential with portfolio concentration risk.' },
     { key: 'pnl', label: 'Net Account Value', value: currency.format(summary.totalValue), tone: '#a78bfa', caption: 'Current portfolio value', tip: 'This shows the current portfolio value based on the latest available price data.' },
   ];
 

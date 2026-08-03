@@ -97,8 +97,6 @@ export interface QuantAdvisorSummary {
   metrics: {
     risk: number;
     efficiency: number;
-    maxDip: number;
-    beta: number;
   };
   forecast: Array<{ day: number; low: number; likely: number; high: number }>;
   sectorRisk: Array<{ name: string; value: number; moneyWeight: number; riskWeight: number }>;
