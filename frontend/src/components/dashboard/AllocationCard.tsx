@@ -22,14 +22,38 @@ const assetClasses: { name: AssetClass; color: string }[] = [
 
 const categoryColors = ['#60A5FA', '#34D399', '#FBBF24', '#F472B6', '#A78BFA', '#22D3EE', '#FB923C'];
 
-const createSegments = <T extends { percentage: number }>(items: T[], radius: number) => {
-  const circumference = 2 * Math.PI * radius;
+const CENTER = 66;
+
+// Angle 0 = 3 o'clock, growing clockwise; the SVG itself is rotated -90deg in
+// CSS so the first slice visually starts at 12 o'clock.
+const polarPoint = (radius: number, angleDeg: number) => {
+  const angleRad = (angleDeg * Math.PI) / 180;
+  return { x: CENTER + radius * Math.cos(angleRad), y: CENTER + radius * Math.sin(angleRad) };
+};
+
+// Builds a filled pie-wedge path from the center out to the arc and back,
+// so slices read as an actual pie chart rather than a stroked ring.
+const buildWedgePath = (radius: number, startAngle: number, endAngle: number) => {
+  const span = endAngle - startAngle;
+  if (span <= 0) return '';
+  if (span >= 359.99) {
+    const p1 = polarPoint(radius, startAngle);
+    const pMid = polarPoint(radius, startAngle + 180);
+    return `M ${CENTER} ${CENTER} L ${p1.x} ${p1.y} A ${radius} ${radius} 0 1 1 ${pMid.x} ${pMid.y} A ${radius} ${radius} 0 1 1 ${p1.x} ${p1.y} Z`;
+  }
+  const start = polarPoint(radius, startAngle);
+  const end = polarPoint(radius, endAngle);
+  const largeArcFlag = span > 180 ? 1 : 0;
+  return `M ${CENTER} ${CENTER} L ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${end.x} ${end.y} Z`;
+};
+
+const createWedges = <T extends { percentage: number }>(items: T[], radius: number) => {
   let cumulative = 0;
   return items.map((item) => {
-    const length = (item.percentage / 100) * circumference;
-    const offset = -(cumulative / 100) * circumference;
+    const startAngle = (cumulative / 100) * 360;
     cumulative += item.percentage;
-    return { ...item, length, offset };
+    const endAngle = (cumulative / 100) * 360;
+    return { ...item, path: buildWedgePath(radius, startAngle, endAngle), endAngle };
   });
 };
 
@@ -56,7 +80,7 @@ export function AllocationCard() {
     void loadAllocation();
   }, []);
 
-  const { assets, breakdowns, totalValue } = useMemo(() => {
+  const { assets, breakdowns } = useMemo(() => {
     const holdingValues = holdings.map((holding) => ({
       ...holding,
       value: holding.type === 'Cash'
@@ -99,8 +123,11 @@ export function AllocationCard() {
 
   const activeAsset = hoveredAsset && breakdowns.get(hoveredAsset)?.length ? hoveredAsset : null;
   const activeBreakdown = activeAsset ? breakdowns.get(activeAsset) ?? [] : [];
-  const assetSegments = createSegments(assets, 54);
-  const breakdownSegments = createSegments(activeBreakdown, 36);
+  const assetWedges = createWedges(assets, 54);
+  const breakdownWedges = createWedges(activeBreakdown, 36);
+  const breakdownRemainder = breakdownWedges.length
+    ? buildWedgePath(36, breakdownWedges[breakdownWedges.length - 1].endAngle, 360)
+    : '';
   const activeAssetData = assets.find((asset) => asset.name === hoveredAsset) ?? null;
   const activeBreakdownData = activeBreakdown.find((item) => item.name === hoveredBreakdown) ?? null;
 
@@ -115,31 +142,29 @@ export function AllocationCard() {
             aria-label="Asset allocation and category breakdown"
             onMouseLeave={() => { setHoveredAsset(null); setHoveredBreakdown(null); }}
           >
-            <circle cx="66" cy="66" r="54" fill="none" stroke="var(--track)" strokeWidth="12" />
-            {assetSegments.map((segment, index) => (
-              <circle
-                key={segment.name}
+            {assetWedges.map((wedge, index) => (
+              <path
+                key={wedge.name}
                 className="donut-segment"
-                data-dimmed={hoveredAsset !== null && hoveredAsset !== segment.name}
-                cx="66" cy="66" r="54" fill="none" stroke={segment.color} strokeWidth="12"
-                strokeDasharray={`${segment.length} ${2 * Math.PI * 54 - segment.length}`}
-                strokeDashoffset={drawn ? segment.offset : segment.offset + segment.length}
+                data-drawn={drawn}
+                data-dimmed={hoveredAsset !== null && hoveredAsset !== wedge.name}
+                d={wedge.path}
+                fill={wedge.color}
                 style={{ transitionDelay: `${index * 100}ms` }}
-                onMouseEnter={() => { setHoveredAsset(segment.name); setHoveredBreakdown(null); }}
+                onMouseEnter={() => { setHoveredAsset(wedge.name); setHoveredBreakdown(null); }}
               />
             ))}
             {activeAsset && (
               <>
-                <circle cx="66" cy="66" r="36" fill="none" stroke="var(--track)" strokeWidth="10" />
-                {breakdownSegments.map((segment) => (
-                  <circle
-                    key={segment.name}
+                {breakdownRemainder && <path d={breakdownRemainder} fill="var(--track)" />}
+                {breakdownWedges.map((wedge) => (
+                  <path
+                    key={wedge.name}
                     className="donut-segment donut-subsegment"
-                    data-dimmed={hoveredBreakdown !== null && hoveredBreakdown !== segment.name}
-                    cx="66" cy="66" r="36" fill="none" stroke={segment.color} strokeWidth="10"
-                    strokeDasharray={`${segment.length} ${2 * Math.PI * 36 - segment.length}`}
-                    strokeDashoffset={drawn ? segment.offset : segment.offset + segment.length}
-                    onMouseEnter={() => setHoveredBreakdown(segment.name)}
+                    data-dimmed={hoveredBreakdown !== null && hoveredBreakdown !== wedge.name}
+                    d={wedge.path}
+                    fill={wedge.color}
+                    onMouseEnter={() => setHoveredBreakdown(wedge.name)}
                     onMouseLeave={() => setHoveredBreakdown(null)}
                   />
                 ))}
@@ -151,9 +176,7 @@ export function AllocationCard() {
               <><span>{activeBreakdownData.name}</span><strong>{activeBreakdownData.shareOfClass.toFixed(1)}%</strong></>
             ) : activeAssetData ? (
               <><span>{activeAssetData.name}</span><strong>{activeAssetData.percentage.toFixed(1)}%</strong></>
-            ) : (
-              <><span>Total Value</span><strong>{totalValue ? `$${Math.round(totalValue).toLocaleString()}` : '—'}</strong></>
-            )}
+            ) : null}
           </div>
           {(activeAssetData || activeBreakdownData) && (
             <div className="allocation-popover">
