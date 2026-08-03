@@ -5,16 +5,17 @@
 Vantage is a full stack portfolio management app for tracking stock holdings, cash balances, and portfolio performance over time with live price updates and an AI assisted quant advisor.
 
 
-<img width="1470" height="810" alt="Screenshot 2026-08-04 at 5 07 28 AM" src="https://github.com/user-attachments/assets/a525ad0a-0bb5-42d0-a280-77e4454aa20d" />
+<img width="1470" height="807" alt="Screenshot 2026-08-04 at 5 57 12 AM" src="https://github.com/user-attachments/assets/62fde0c6-97d8-481f-9029-1093b06595ac" />
+
 
 ## Features
 
-- **Dashboard** — total portfolio value with a performance chart (range selection, drag-to-compare), day gain / total return metrics, cash balance, and asset/sector allocation breakdowns.
-- **Holdings** — buy and sell stocks (with ticker/company autocomplete backed by live search), track bonds, filter/sort by asset type or sector, and a deep dive into a stock's detail page (price history, analyst recommendations, earnings dates).
-- **Cash & Activity** — cash balance with deposit/withdraw and a filterable, paginated transaction history.
-- **Quant Advisor** — an AI powered assistant (Gemini) that summarizes portfolio risk/return and answers questions about your holdings.
-- **Profile** — edit your display name/email; the avatar initials and dashboard greeting update accordingly.
-- **Live prices** — a WebSocket feed streams simulated real time price ticks so daily change and portfolio value update without a page refresh.
+- **Dashboard** - total portfolio value with a performance chart (range selection, drag-to-compare), day gain / total return metrics, cash balance, and asset/sector allocation breakdowns.
+- **Holdings** - buy and sell stocks (with ticker/company autocomplete backed by live search), track bonds, filter/sort by asset type or sector, and a deep dive into a stock's detail page (price history, analyst recommendations, earnings dates).
+- **Cash & Activity** - cash balance with deposit/withdraw and a filterable, paginated transaction history.
+- **Quant Advisor** - an AI powered assistant (Gemini) that summarizes portfolio risk/return and answers questions about your holdings.
+- **Profile** - edit your display name/email; the avatar initials and dashboard greeting update accordingly.
+- **Live prices** - a WebSocket feed streams simulated real time price ticks so daily change and portfolio value update without a page refresh.
 
 ## Tech stack
 
@@ -37,8 +38,8 @@ backend/
     quant_advisor.py       # AI portfolio summary + chat endpoint
 frontend/
   src/
-    pages/                  # Dashboard, Holdings, Cash, Profile, Quant Advisor, Stock Detail
-    components/             # Shared UI (cards, forms, tables, dialogs, charts)
-    contexts/               # Live prices (WebSocket) and user profile contexts
-    api/client.ts           # Fetch wrappers for all backend endpoints
+    pages/                 # Dashboard, Holdings, Cash, Profile, Quant Advisor, Stock Detail
+    components/            # Shared UI (cards, forms, tables, dialogs, charts)
+    contexts/              # Live prices (WebSocket) and user profile contexts
+    api/client.ts          # Fetch wrappers for all backend endpoints
 ```
