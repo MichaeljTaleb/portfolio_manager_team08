@@ -25,20 +25,20 @@ Vantage is a full stack portfolio management app for tracking stock holdings, ca
 
 ```
 backend/
-  app.py                 # Flask app entrypoint, blueprint + websocket registration
-  database.py             # SQLAlchemy engine/session setup (reads DATABASE_URL)
+  app.py                   # Flask app entrypoint, blueprint + websocket registration
+  database.py              # SQLAlchemy engine/session setup (reads DATABASE_URL)
   models.py                # ORM models (stocks, user_assets, transactions, portfolio_history)
   seed_data.py             # Seeds the database with sample stocks/holdings
   automation_service.py    # Scheduled daily price sync + portfolio snapshot job
-  websocket_manager.py      # Simulated live price feed over WebSocket
+  websocket_manager.py     # Simulated live price feed over WebSocket
   routes/
-    holdings.py             # Buy/sell, ticker search & quotes, holding detail/performance/analysis
-    portfolio.py             # Summary, allocation, cash balance + transfers, performance history
-    quant_advisor.py         # AI portfolio summary + chat endpoint
+    holdings.py            # Buy/sell, ticker search, holding detail/performance/analysis
+    portfolio.py           # Summary, allocation, cash balance + transfers, performance
+    quant_advisor.py       # AI portfolio summary + chat endpoint
 frontend/
   src/
     pages/                  # Dashboard, Holdings, Cash, Profile, Quant Advisor, Stock Detail
-    components/              # Shared UI (cards, forms, tables, dialogs, charts)
-    contexts/                # Live prices (WebSocket) and user profile contexts
-    api/client.ts             # Fetch wrappers for all backend endpoints
+    components/             # Shared UI (cards, forms, tables, dialogs, charts)
+    contexts/               # Live prices (WebSocket) and user profile contexts
+    api/client.ts           # Fetch wrappers for all backend endpoints
 ```
