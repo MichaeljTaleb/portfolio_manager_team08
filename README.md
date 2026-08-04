@@ -11,7 +11,7 @@ Vantage is a full stack portfolio management app for tracking stock holdings, ca
 ## Features
 
 - **Dashboard** - total portfolio value with a performance chart (range selection, drag-to-compare), day gain / total return metrics, cash balance, and asset/sector allocation breakdowns.
-- **Holdings** - buy and sell stocks (with ticker/company autocomplete backed by live search), track bonds, filter/sort by asset type or sector, and a deep dive into a stock's detail page (price history, analyst recommendations, earnings dates).
+- **Holdings** - buy and sell stocks (with ticker/company autocomplete backed by live search), filter/sort by asset type or sector, and a deep dive into a stock's detail page (price history, analyst recommendations, earnings dates).
 - **Cash & Activity** - cash balance with deposit/withdraw and a filterable, paginated transaction history.
 - **Quant Advisor** - an AI powered assistant (Gemini) that summarizes portfolio risk/return and answers questions about your holdings.
 - **Profile** - edit your display name/email; the avatar initials and dashboard greeting update accordingly.
