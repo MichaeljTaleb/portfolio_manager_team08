@@ -1,0 +1,18 @@
+(cash balance: 157504.83)
+
+Starting cash: 1000.00
+
+Row  1 | price=10.0   action=Buy 100    -> PASS
+Row  2 | price=15.0   action=Sell 50    -> PASS
+Row  3 | price=10.0   action=(mark-to-market) -> PASS
+Row  4 | price=20.0   action=(mark-to-market) -> PASS
+Row  5 | price=25.0   action=Buy 10     -> PASS
+Row  6 | price=15.0   action=(mark-to-market) -> PASS
+Row  7 | price=20.0   action=(mark-to-market) -> PASS
+Row  8 | price=15.0   action=Sell 20    -> PASS
+Row  9 | price=30.0   action=(mark-to-market) -> PASS
+
+
+ALL CHECKED FIELDS PASSED
+
+(cleaned up test data, restored real cash balance to 157504.83)
